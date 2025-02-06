@@ -55,6 +55,9 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+
 jobs:
   assign-reviewer:
     runs-on: ubuntu-latest
@@ -68,6 +71,8 @@ jobs:
           webhook_url: ${{ secrets.WEBHOOK_URL }}
           template: "Yay! <@{userID}> is the reviewer of [PR #{prNumber}]({prURL})!"
 ```
+
+> ‼️ Don't forget to add `permissions`! This action only requires `pull-requests: write`.
 
 Add the file, commit it on the new branch, push it, and create a PR.
 
