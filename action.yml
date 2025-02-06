@@ -1,4 +1,4 @@
-name: Random Reviewer with Discord
+name: Random Reviewer Discord
 description: randomly assigns reviewers to PRs and alert using Discord.
 author: JedBeom
 
