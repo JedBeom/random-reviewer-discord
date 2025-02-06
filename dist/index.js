@@ -61845,6 +61845,9 @@ function hasReviewer() {
 function selectReviewer(usernames, exclude) {
     // get candidates and exclude the creator
     const candidates = usernames.filter((username) => !exclude.includes(username.github));
+    if (candidates.length === 0) {
+        throw new Error("No candidates after excluding the creator.");
+    }
     // randomly select the reviewer from candidates
     return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -61915,17 +61918,12 @@ async function main() {
         const webhookURL = coreExports.getInput("webhook_url");
         const template = coreExports.getInput("template");
         const creator = event.sender.login.toLowerCase();
-        let excludedGithubUsername = [creator];
-        if (coreExports.getBooleanInput("allow_self_review")) {
-            coreExports.info("Allowing the creator to be included in candidates.");
-            excludedGithubUsername = [];
-        }
         const usernames = parseUsernames(candidatesInput);
         if (usernames.length === 0) {
             coreExports.warning("No candidates. No-op.");
             return;
         }
-        const reviewer = selectReviewer(usernames, excludedGithubUsername);
+        const reviewer = selectReviewer(usernames, [creator]);
         await assignReviewer(reviewer);
         await sendMessage(webhookURL, template, reviewer);
     }

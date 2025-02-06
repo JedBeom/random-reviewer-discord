@@ -22,10 +22,6 @@ inputs:
     description: allow this action to run on all events including pull_request
     required: false
     default: false
-  allow_self_review:
-    description: include the pr creator as an candidate
-    required: false
-    default: false
 
 runs:
   using: node20

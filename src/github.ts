@@ -24,6 +24,10 @@ export function selectReviewer(
     (username) => !exclude.includes(username.github),
   );
 
+  if (candidates.length === 0) {
+    throw new Error("No candidates after excluding the creator.");
+  }
+
   // randomly select the reviewer from candidates
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
