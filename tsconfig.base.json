@@ -11,8 +11,6 @@
     "moduleResolution": "NodeNext",
     "newLine": "lf",
     "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
     "pretty": true,
     "resolveJsonModule": true,
     "sourceMap": true,

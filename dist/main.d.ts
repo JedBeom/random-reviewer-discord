@@ -3,4 +3,4 @@
  *
  * @returns Resolves when the action is complete.
  */
-export declare function run(): Promise<void>;
+export declare function main(): Promise<void>;

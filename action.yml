@@ -1,23 +1,23 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Random Reviewer with Discord
+description: randomly assigns reviewers to PRs and alert using Discord.
+author: JedBeom
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: user-check
+  color: green
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  candidates:
+    description: Candidates of reviewers.
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: Your output description here
+  webhook_url:
+    description: The url of discord Webhook.
+    required: true
+  template:
+    description: template
+    required: false
 
 runs:
   using: node20
