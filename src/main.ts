@@ -11,16 +11,18 @@ import {
 } from "@/github";
 import { sendMessage } from "@/discord";
 
-/**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
- */
 export async function main() {
-  core.info(`eventName is ${githubContext.eventName}`);
+  const allowOtherEvents = core.getBooleanInput("allow_other_events");
+  const eventName = githubContext.eventName;
+  if (eventName !== "pull_request" && !allowOtherEvents) {
+    return core.setFailed(
+      `This event is ${eventName}. To allow this action to run on all events, set allow_other_events as true.`,
+    );
+  }
 
   if (!isReadyToReview() && hasReviewer()) {
     core.info("This pr is draft or already has reviewer(s).");
+    core.info("no-op. Stopping.");
     return;
   }
 
@@ -28,10 +30,21 @@ export async function main() {
     const candidatesInput = core.getMultilineInput("candidates");
     const webhookURL = core.getInput("webhook_url");
     const template = core.getInput("template");
-    const creator = event.sender.login;
+
+    const creator = event.sender.login.toLowerCase();
+    let excludedGithubUsername = [creator];
+    if (core.getBooleanInput("allow_self_review")) {
+      core.info("Allowing the creator to be included in candidates.");
+      excludedGithubUsername = [];
+    }
 
     const usernames = parseUsernames(candidatesInput);
-    const reviewer = selectReviewer(usernames, [creator]);
+    if (usernames.length === 0) {
+      core.warning("No candidates. No-op.");
+      return;
+    }
+
+    const reviewer = selectReviewer(usernames, excludedGithubUsername);
     await assignReviewer(reviewer);
     await sendMessage(webhookURL, template, reviewer);
   } catch (error) {

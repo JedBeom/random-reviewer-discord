@@ -10,14 +10,22 @@ branding:
 # Define your inputs here.
 inputs:
   candidates:
-    description: Candidates of reviewers.
+    description: candidates of reviewers. see .env.example.
     required: true
   webhook_url:
-    description: The url of discord Webhook.
+    description: Discord webhook url
     required: true
   template:
     description: template
     required: false
+  allow_other_events:
+    description: allow this action to run on all events including pull_request
+    required: false
+    default: false
+  allow_self_review:
+    description: include the pr creator as an candidate
+    required: false
+    default: false
 
 runs:
   using: node20

@@ -37,7 +37,9 @@ export function parseUsernames(input: string[]): Username[] {
   const candidates = input
     .filter((line) => !line.startsWith("#"))
     .map((val) => {
-      const pair = val.split(":").map((username) => username.trim());
+      const pair = val
+        .split(":")
+        .map((username) => username.trim().toLowerCase());
 
       return {
         github: pair[0],

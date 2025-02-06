@@ -3,7 +3,7 @@ import * as httpm from "@actions/http-client";
 import { event } from "@/github";
 import { type FormatParam, type Username } from "@/types";
 
-export const DEFAULT_TEMPLATE = `<@{userID}>, you are assigned as the reviewer of [PR {prNumber}]({prURL}). Please review!`;
+export const DEFAULT_TEMPLATE = `- Reviewer: <@{userID}>\n- PR: [#{prNumber}]({prURL})`;
 
 export function formatString(template: string, param: FormatParam): string {
   for (const key in param) {

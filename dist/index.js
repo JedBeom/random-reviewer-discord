@@ -61857,7 +61857,9 @@ function parseUsernames(input) {
     const candidates = input
         .filter((line) => !line.startsWith("#"))
         .map((val) => {
-        const pair = val.split(":").map((username) => username.trim());
+        const pair = val
+            .split(":")
+            .map((username) => username.trim().toLowerCase());
         return {
             github: pair[0],
             discord: pair[1],
@@ -61877,7 +61879,7 @@ async function assignReviewer(reviewer) {
 
 var libExports = requireLib();
 
-const DEFAULT_TEMPLATE = `<@{userID}>, you are assigned as the reviewer of [PR {prNumber}]({prURL}). Please review!`;
+const DEFAULT_TEMPLATE = `- Reviewer: <@{userID}>\n- PR: [#{prNumber}]({prURL})`;
 function formatString(template, param) {
     for (const key in param) {
         template = template.replace(`{${key}}`, param[key]);
@@ -61897,24 +61899,33 @@ async function sendMessage(webhookURL, template, reviewer) {
     return client.postJson(webhookURL, { content });
 }
 
-/**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
- */
 async function main() {
-    coreExports.info(`eventName is ${githubExports.context.eventName}`);
+    const allowOtherEvents = coreExports.getBooleanInput("allow_other_events");
+    const eventName = githubExports.context.eventName;
+    if (eventName !== "pull_request" && !allowOtherEvents) {
+        return coreExports.setFailed(`This event is ${eventName}. To allow this action to run on all events, set allow_other_events as true.`);
+    }
     if (!isReadyToReview() && hasReviewer()) {
         coreExports.info("This pr is draft or already has reviewer(s).");
+        coreExports.info("no-op. Stopping.");
         return;
     }
     try {
         const candidatesInput = coreExports.getMultilineInput("candidates");
         const webhookURL = coreExports.getInput("webhook_url");
         const template = coreExports.getInput("template");
-        const creator = event.sender.login;
+        const creator = event.sender.login.toLowerCase();
+        let excludedGithubUsername = [creator];
+        if (coreExports.getBooleanInput("allow_self_review")) {
+            coreExports.info("Allowing the creator to be included in candidates.");
+            excludedGithubUsername = [];
+        }
         const usernames = parseUsernames(candidatesInput);
-        const reviewer = selectReviewer(usernames, [creator]);
+        if (usernames.length === 0) {
+            coreExports.warning("No candidates. No-op.");
+            return;
+        }
+        const reviewer = selectReviewer(usernames, excludedGithubUsername);
         await assignReviewer(reviewer);
         await sendMessage(webhookURL, template, reviewer);
     }
