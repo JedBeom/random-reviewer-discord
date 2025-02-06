@@ -1,6 +1,6 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Random Reviewer with Discord
+description: randomly assigns reviewers to PRs and alert using Discord.
+author: JedBeom
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
@@ -12,7 +12,7 @@ inputs:
   milliseconds:
     description: Your input description here
     required: true
-    default: '1000'
+    default: "1000"
 
 # Define your outputs here.
 outputs:
@@ -20,5 +20,5 @@ outputs:
     description: Your output description here
 
 runs:
-  using: node20
+  using: node22
   main: dist/index.js
