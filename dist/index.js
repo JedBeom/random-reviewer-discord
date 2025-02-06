@@ -61872,9 +61872,15 @@ function parseUsernames(input) {
 }
 async function assignReviewer(reviewer) {
     const octokit = new Octokit();
+    const repo = githubExports.context.repo;
+    const number = githubExports.context.issue.number;
+    await octokit.rest.issues.addAssignees({
+        ...repo,
+        assignees: [reviewer.github],
+        issue_number: number,
+    });
     return octokit.rest.pulls.requestReviewers({
-        owner: githubExports.context.repo.owner,
-        repo: githubExports.context.repo.repo,
+        ...repo,
         pull_number: githubExports.context.issue.number,
         reviewers: [reviewer.github],
     });

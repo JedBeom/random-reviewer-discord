@@ -56,9 +56,16 @@ export function parseUsernames(input: string[]): Username[] {
 
 export async function assignReviewer(reviewer: Username) {
   const octokit = new Octokit();
+  const repo = githubContext.repo;
+  const number = githubContext.issue.number;
+
+  await octokit.rest.issues.addAssignees({
+    ...repo,
+    assignees: [reviewer.github],
+    issue_number: number,
+  });
   return octokit.rest.pulls.requestReviewers({
-    owner: githubContext.repo.owner,
-    repo: githubContext.repo.repo,
+    ...repo,
     pull_number: githubContext.issue.number,
     reviewers: [reviewer.github],
   });
