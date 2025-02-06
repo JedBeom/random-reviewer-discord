@@ -4,20 +4,23 @@ author: JedBeom
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: user-check
+  color: green
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  candidates:
+    description: Candidates of reviewers.
     required: true
-    default: "1000"
+  webhook_url:
+    description: The url of discord Webhook.
+    required: true
+  template:
+    description: template
+    required: false
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
 
 runs:
   using: node22
