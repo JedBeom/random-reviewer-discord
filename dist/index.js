@@ -61914,6 +61914,9 @@ async function main() {
     if (eventName !== "pull_request" && !allowOtherEvents) {
         return coreExports.setFailed(`This event is ${eventName}. To allow this action to run on all events, set allow_other_events as true.`);
     }
+    if (event.action === "synchronize") {
+        return coreExports.info("This action doesn't work for synchronize");
+    }
     if (!isReadyToReview() && hasReviewer()) {
         coreExports.info("This pr is draft or already has reviewer(s).");
         coreExports.info("no-op. Stopping.");
