@@ -20,6 +20,10 @@ export async function main() {
     );
   }
 
+  if (event.action === "synchronize") {
+    return core.info("This action doesn't work for synchronize");
+  }
+
   if (!isReadyToReview() && hasReviewer()) {
     core.info("This pr is draft or already has reviewer(s).");
     core.info("no-op. Stopping.");
