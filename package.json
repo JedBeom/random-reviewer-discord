@@ -1,7 +1,7 @@
 {
   "name": "random-reviewer-discord",
   "description": "Randomly assign a reviewer and send a Discord message",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "",
   "type": "module",
   "private": true,
