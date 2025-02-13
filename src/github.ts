@@ -1,6 +1,5 @@
 import * as core from "@actions/core";
 import { context as githubContext } from "@actions/github";
-
 import { Octokit } from "@octokit/action";
 import type { PullRequest } from "@octokit/webhooks-types";
 

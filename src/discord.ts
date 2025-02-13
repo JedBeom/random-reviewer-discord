@@ -1,7 +1,7 @@
 import * as httpm from "@actions/http-client";
+import { type PullRequest } from "@octokit/webhooks-types";
 
 import { type TemplateData, type Username } from "@/types";
-import { type PullRequest } from "@octokit/webhooks-types";
 
 export const DEFAULT_TEMPLATE = `- Reviewer: <@{userID}>\n- PR: [#{prNumber}]({prURL})`;
 
