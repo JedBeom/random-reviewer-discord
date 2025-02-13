@@ -1,8 +1,8 @@
 import { describe, expect, test } from "@jest/globals";
-import { formatString } from "@/discord";
-import { type FormatParam } from "@/types";
+import { formatString, idToMention } from "@/discord";
+import type { FormatParam } from "@/types";
 
-const sets = [
+const setsFormatString = [
   {
     id: 1,
     template: "<@{userID}>, you are the reviewer of [PR #{prNumber}]({prURL})!",
@@ -27,9 +27,15 @@ const sets = [
 ];
 
 describe("formatString", () => {
-  for (const set of sets) {
+  for (const set of setsFormatString) {
     test(`id: ${set.id}`, () => {
       expect(formatString(set.template, set.param)).toBe(set.expected);
     });
   }
+});
+
+describe("idToMention", () => {
+  test("1234 to <@1234>", () => {
+    expect(idToMention("1234")).toBe("<@1234>");
+  });
 });

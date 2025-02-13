@@ -86,7 +86,7 @@ afterEach(() => {
   jest.spyOn(global.Math, "random").mockRestore();
 });
 
-describe("selectReviewer", () => {
+describe("chooseReviewer", () => {
   for (const set of selectReviewerSets) {
     test(`id: ${set.id}`, () => {
       expect(chooseReviewer(set.usernames, set.exclude)).toStrictEqual(
@@ -94,4 +94,10 @@ describe("selectReviewer", () => {
       );
     });
   }
+
+  test("Zero candidates throws an error", () => {
+    expect(() => chooseReviewer([user1], [user1.github])).toThrow(
+      new Error("No candidates after excluding the creator."),
+    );
+  });
 });

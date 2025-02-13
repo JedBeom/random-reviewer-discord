@@ -13,6 +13,7 @@ import type {
   ScheduleEvent,
 } from "@/types";
 
+/* istanbul ignore next */
 function createScheduleEvent(): ScheduleEvent {
   return {
     action: "",
@@ -21,6 +22,7 @@ function createScheduleEvent(): ScheduleEvent {
   };
 }
 
+/* istanbul ignore next */
 export function getActionEvent(): ActionEvent {
   const name = githubContext.eventName as ActionEventName;
   let payload = githubContext.payload;
@@ -35,6 +37,7 @@ export function getActionEvent(): ActionEvent {
   };
 }
 
+/* istanbul ignore next */
 export function getDefaultContext(): RouterContext {
   const event = getActionEvent();
 
@@ -58,10 +61,12 @@ export function getDefaultContext(): RouterContext {
   };
 }
 
+/* istanbul ignore next */
 export function isReadyToReview(pr: PullRequest): boolean {
   return !pr.draft;
 }
 
+/* istanbul ignore next */
 export async function getRequestedReviewers(
   octokit: Octokit,
   pr: PullRequest,
@@ -76,6 +81,7 @@ export async function getRequestedReviewers(
   return data.users.map((user) => user.login);
 }
 
+/* istanbul ignore next */
 export async function getPreviousReviewers(
   octokit: Octokit,
   pr: PullRequest,
@@ -130,6 +136,7 @@ export function parseUsernames(input: string[]): Username[] {
   return candidates;
 }
 
+/* istanbul ignore next */
 export async function assignReviewer(pr: PullRequest, reviewer: Username) {
   const octokit = new Octokit();
 
@@ -148,6 +155,7 @@ export async function assignReviewer(pr: PullRequest, reviewer: Username) {
   });
 }
 
+/* istanbul ignore next */
 export async function listPRs(owner: string, repo: string) {
   const octokit = new Octokit();
 

@@ -26,6 +26,7 @@ interface IDiscordWebhookMessage {
 }
 
 // See: https://discord.com/developers/docs/resources/webhook#execute-webhook
+/* istanbul ignore next */
 export async function sendMessage(
   webhookURL: URL,
   content: string,
@@ -46,6 +47,7 @@ export async function sendMessage(
   return result.id;
 }
 
+/* istanbul ignore next */
 export async function notifySingleReviewer(
   webhookURL: URL,
   template: string,

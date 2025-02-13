@@ -20,7 +20,7 @@ inputs:
     required: false
   pulls_min_age:
     description: (in hours) Pulls which are not old by the specified amount of time are ignored when review reminding.
-    required: false 
+    required: false
     default: 2
 
 runs:
