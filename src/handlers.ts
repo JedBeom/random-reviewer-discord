@@ -5,7 +5,12 @@ import type {
   PullRequestReadyForReviewEvent,
   PullRequestReviewRequestedEvent,
 } from "@octokit/webhooks-types";
-import type { RouterContext, ScheduleEvent } from "@/types";
+import type {
+  RouterContext,
+  ScheduleEvent,
+  Username,
+  TemplateKey,
+} from "@/types";
 import {
   isReadyToReview,
   getRequestedReviewers,
@@ -13,8 +18,9 @@ import {
   listPRs,
   assignReviewer,
   chooseReviewer,
+  getTemplate,
 } from "@/github";
-import { idToMention, notifySingleReviewer, sendMessage } from "@/discord";
+import { idToMention, notifyReviewer, sendMessage } from "@/discord";
 
 export async function fallbackHandler(c: RouterContext) {
   core.setFailed(
@@ -41,11 +47,12 @@ export async function handleOpened(c: RouterContext) {
     return;
   }
 
-  return assignAndNotify(c);
+  return assignAndNotify(c, "opened");
 }
 
 export async function handleReopenOrReadyForReview(c: RouterContext) {
   const pr = (c.event.payload! as PullRequestReadyForReviewEvent).pull_request;
+  const isReopened = c.event.activityType === "reopened";
 
   if (!isReadyToReview(pr)) {
     core.info("This pr is draft. No-op.");
@@ -57,22 +64,43 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
   const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
   if (requestedReviewers.length === 0) {
     core.info(`No requested reviewers. Start assigning a new reviewer.`);
-    return assignAndNotify(c);
+    return assignAndNotify(
+      c,
+      isReopened ? "reopened_assigned" : "ready_for_review_assigned",
+    );
+  }
+
+  if (requestedReviewers.length === 1) {
+    core.info(`This pr has the reviewer: ${requestedReviewers[0]}.`);
+    const reviewer = c.usernames.find(
+      ({ github }) => github === requestedReviewers[0],
+    );
+
+    if (reviewer === undefined) {
+      core.setFailed(
+        `Can't find ${requestedReviewers[0]} from the candidates.`,
+      );
+      return;
+    }
+
+    const tmpl = getTemplate(
+      isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
+    );
+    await notifyReviewer(c.webhookURL, tmpl, reviewer, pr);
+    core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
   core.info(`This pr has the reviewer(s): ${requestedReviewers.join(", ")}.`);
   core.info(`Start notifying them.`);
-  const mentions = c.usernames
-    .filter(({ github }) => requestedReviewers.includes(github))
-    .map(({ discord }) => idToMention(discord))
-    .join(" ");
-
-  await sendMessage(
-    c.webhookURL,
-    c.event.activityType === "reopened"
-      ? `${mentions}, [Pr title #314](https://github.com) is reopened.`
-      : `${mentions}, [Pr title #314](https://github.com) is now ready for review!`,
+  const reviewers = c.usernames.filter(({ github }) =>
+    requestedReviewers.includes(github),
   );
+
+  const tmpl = getTemplate(
+    isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural",
+  );
+
+  await notifyReviewer(c.webhookURL, tmpl, reviewers, pr);
   core.info("Notified them on Discord.");
 }
 
@@ -80,46 +108,44 @@ export async function handleReviewRequested(c: RouterContext) {
   const pr = (c.event.payload! as PullRequestReviewRequestedEvent).pull_request;
 
   if (pr.requested_reviewers.length === 0) {
-    return core.setFailed(
+    return core.error(
       "No requested reviewers although the event is review_requested.",
     );
   }
 
   // TODO: support teams as reviewers
-  const reviewers = pr.requested_reviewers
+  const requestedReviewers = pr.requested_reviewers
     .filter((reviewer) => "login" in reviewer)
     .map((user) => user.login);
 
-  if (reviewers.length > 1) {
-    const mentions = c.usernames
-      .filter(({ github }) => reviewers.includes(github))
-      .map(({ discord }) => idToMention(discord))
-      .join(" ");
-
-    await sendMessage(
-      c.webhookURL,
-      `${mentions}, you were manually assigned as the reviewers of [Pr title #314](https://github.com).`,
+  if (requestedReviewers.length > 1) {
+    core.info("This pr has multiple reviewers.");
+    const reviewers: Username[] = c.usernames.filter(({ github }) =>
+      requestedReviewers.includes(github),
     );
+
+    const tmpl = getTemplate("review_requested_plural");
+    await notifyReviewer(c.webhookURL, tmpl, reviewers, pr);
     return core.info("Notified them on Discord.");
   }
 
-  const reviewer = c.usernames.find(({ github }) => github === reviewers[0]);
+  const reviewer = c.usernames.find(
+    ({ github }) => github === requestedReviewers[0],
+  );
   if (reviewer === undefined) {
     return core.setFailed(
-      `Github user ${reviewers[0]} is not found among the candidates.`,
+      `Can't find ${requestedReviewers[0]} among the candidates.`,
     );
   }
 
-  await notifySingleReviewer(
-    c.webhookURL,
-    `${idToMention(reviewer.discord)} were manually assigned as the reviewer of [asdf alshbilsj #314](https://github.com).`,
-    reviewer,
-    pr,
-  );
+  const tmpl = getTemplate("review_requested_one");
+  await notifyReviewer(c.webhookURL, tmpl, reviewer, pr);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
-export async function handleReviewRequestedRemoved() {}
+export async function handleReviewRequestedRemoved() {
+  core.warning("Not implemented yet");
+}
 
 export async function handleSchedule(c: RouterContext) {
   const repo = (c.event.payload as ScheduleEvent).repo;
@@ -129,6 +155,7 @@ export async function handleSchedule(c: RouterContext) {
   const minAge = Number(
     core.getInput("remind_prs_min_age", { required: true }),
   );
+  core.info(`Exclude prs not old more than ${minAge}`);
   const grouped = groupReviewers(prs, minAge);
   const reviewerGithubs = Object.keys(grouped);
   core.info(`${reviewerGithubs.length} reviewer(s) will be notified.`);
@@ -154,10 +181,9 @@ export async function handleSchedule(c: RouterContext) {
     );
   }
 
-  await sendMessage(
-    c.webhookURL,
-    "Review Reminder Time!\n\n" + lines.join("\n"),
-  );
+  const msg = getTemplate("schedule");
+
+  await sendMessage(c.webhookURL, msg + "\n\n" + lines.join("\n"));
   core.info("Notified them on Discord.");
 }
 
@@ -165,10 +191,10 @@ export async function handleConvertedToDraft() {
   // TODO: use actions artifacts to restore message ID
   // and edit it
   // Requested Reviewers do stay in place despite being drafted
-  core.info("Not implemented");
+  core.warning("Not implemented yet");
 }
 
-export async function assignAndNotify(c: RouterContext) {
+export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const event = c.event.payload! as PullRequestEvent;
 
   const creator = event.sender.login.toLowerCase();
@@ -178,11 +204,9 @@ export async function assignAndNotify(c: RouterContext) {
   await assignReviewer(event.pull_request, reviewer);
   core.info(`Assigned @${reviewer.github} as the reviewer.`);
 
-  await notifySingleReviewer(
-    c.webhookURL,
-    `<@${reviewer.discord}>, you were assigned as the reviewer of [asdf alshbilsj #314](https://github.com).`,
-    reviewer,
-    event.pull_request,
-  );
+  const tmpl = getTemplate(tmplKey);
+  core.info(`Use the template ${tmplKey}: """${tmpl}"""`);
+
+  await notifyReviewer(c.webhookURL, tmpl, reviewer, event.pull_request);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }

@@ -7,8 +7,9 @@ export type Username = {
   discord: string;
 };
 
-export type FormatParam = {
-  userID: string;
+export type TemplateData = {
+  mention: string;
+  prTitle: string;
   prNumber: string;
   prURL: string;
 };
@@ -83,3 +84,16 @@ export type RouterContext = {
   webhookURL: URL;
   octokit: Octokit;
 };
+export type TemplateKey =
+  | "opened"
+  | "reopened_assigned"
+  | "reopened_exist_one"
+  | "reopened_exist_plural"
+  | "ready_for_review_assigned"
+  | "ready_for_review_exist_one"
+  | "ready_for_review_exist_plural"
+  | "review_requested_one"
+  | "review_requested_plural"
+  | "converted_to_draft"
+  | "review_request_removed"
+  | "schedule";

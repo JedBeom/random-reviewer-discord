@@ -11,6 +11,7 @@ import type {
   Username,
   RouterContext,
   ScheduleEvent,
+  TemplateKey,
 } from "@/types";
 
 /* istanbul ignore next */
@@ -205,20 +206,9 @@ export function groupReviewers(
   return group;
 }
 
-type TemplateKey =
-  | "opened"
-  | "reopened_assigned"
-  | "reopened_exist_one"
-  | "reopened_exist_plural"
-  | "ready_for_review_assigned"
-  | "ready_for_review_exist_one"
-  | "ready_for_review_exist_plural"
-  | "review_requested_one"
-  | "review_requested_plural"
-  | "converted_to_draft"
-  | "review_request_removed";
-
 /* istanbul ignore next */
 export function getTemplate(key: TemplateKey) {
-  return core.getMultilineInput(key, { required: true }).join("\n");
+  return core
+    .getMultilineInput("template_" + key, { required: true })
+    .join("\n");
 }

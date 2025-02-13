@@ -1,15 +1,15 @@
 import * as httpm from "@actions/http-client";
 
-import { type FormatParam, type Username } from "@/types";
+import { type TemplateData, type Username } from "@/types";
 import { type PullRequest } from "@octokit/webhooks-types";
 
 export const DEFAULT_TEMPLATE = `- Reviewer: <@{userID}>\n- PR: [#{prNumber}]({prURL})`;
 
-export function formatString(template: string, param: FormatParam): string {
-  for (const key in param) {
+export function formatString(template: string, data: TemplateData): string {
+  for (const key in data) {
     template = template.replaceAll(
       new RegExp(`{ *${key} *}`, "g"),
-      param[key as keyof FormatParam],
+      data[key as keyof TemplateData],
     );
   }
 
@@ -48,17 +48,26 @@ export async function sendMessage(
 }
 
 /* istanbul ignore next */
-export async function notifySingleReviewer(
+export async function notifyReviewer(
   webhookURL: URL,
   template: string,
-  reviewer: Username,
+  reviewer: Username | Username[],
   pr: PullRequest,
 ) {
   if (template === "") {
-    template = DEFAULT_TEMPLATE;
+    template = "NO TEMPLATE WAS GIVEN!!";
   }
+
+  let mention = "";
+  if ("length" in reviewer) {
+    mention = reviewer.map(({ discord }) => idToMention(discord)).join(" ");
+  } else {
+    mention = idToMention(reviewer.discord);
+  }
+
   const content = formatString(template, {
-    userID: reviewer.discord,
+    mention: mention,
+    prTitle: pr.title,
     prNumber: pr.number.toString(),
     prURL: pr.html_url,
   });
