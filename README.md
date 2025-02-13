@@ -9,7 +9,7 @@
 **This action is not stable yet** and upcoming minor versions may have breaking changes.
 Specify the full version(e.g. `JedBeom/random-reviewer-discord@v0.1.0`) instead of using `v0`.
 
-Randomly assigns a reviewer and send a message using Discord webhook.
+Automatically assign reviewers at random and notify them on Discord! 
 
 ## How to Install on Your Repository
 
