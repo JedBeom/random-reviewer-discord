@@ -15,7 +15,7 @@ const sets = [
   },
   {
     id: 2,
-    template: "Reviewer of [PR #{prNumber}]({prURL}) is <@{userID}>!",
+    template: "Reviewer of [PR #{ prNumber}]({ prURL }) is <@{userID}>!",
     param: {
       userID: "20250206",
       prNumber: "91",

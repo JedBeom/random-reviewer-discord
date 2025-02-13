@@ -6,8 +6,8 @@ import {
   afterEach,
   jest,
 } from "@jest/globals";
-import { type Username } from "./types.js";
-import { parseUsernames, selectReviewer } from "./github.js";
+import { type Username } from "@/types";
+import { parseUsernames, chooseReviewer } from "@/github";
 
 // example usernames
 const user1: Username = { github: "jedbeom", discord: "1111111111111111111" };
@@ -89,7 +89,7 @@ afterEach(() => {
 describe("selectReviewer", () => {
   for (const set of selectReviewerSets) {
     test(`id: ${set.id}`, () => {
-      expect(selectReviewer(set.usernames, set.exclude)).toStrictEqual(
+      expect(chooseReviewer(set.usernames, set.exclude)).toStrictEqual(
         set.expected,
       );
     });

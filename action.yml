@@ -1,5 +1,5 @@
 name: Random Reviewer Discord
-description: randomly assigns reviewers to PRs and alert using Discord.
+description: Automatically assign reviewers at random and notify them on Discord
 author: JedBeom
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
@@ -16,12 +16,12 @@ inputs:
     description: Discord webhook url
     required: true
   template:
-    description: template
+    description: Message template used whenever the reviewer is assigned.
     required: false
-  allow_other_events:
-    description: allow this action to run on all events including pull_request
-    required: false
-    default: false
+  pulls_min_age:
+    description: (in hours) Pulls which are not old by the specified amount of time are ignored when review reminding.
+    required: false 
+    default: 2
 
 runs:
   using: node20
