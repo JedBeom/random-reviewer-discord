@@ -171,12 +171,21 @@ export async function listPRs(owner: string, repo: string) {
   return pulls as PullRequest[];
 }
 
-export async function groupReviewers(
+export function groupReviewers(
   pulls: PullRequest[],
-): Promise<Record<string, PullRequest[]>> {
+  minAge: number,
+): Record<string, PullRequest[]> {
+  const now = new Date();
   const group = {} as Record<string, PullRequest[]>;
   for (const pull of pulls) {
     if (pull.draft) {
+      continue;
+    }
+
+    // TODO: compare lastNotifiedAt (when the message was sent) instead of created_at
+    const createdAt = new Date(pull.created_at);
+    const diffHours = (now.getTime() - createdAt.getTime()) / 1000 / 60 / 60;
+    if (diffHours < minAge) {
       continue;
     }
 
@@ -194,4 +203,22 @@ export async function groupReviewers(
   }
 
   return group;
+}
+
+type TemplateKey =
+  | "opened"
+  | "reopened_assigned"
+  | "reopened_exist_one"
+  | "reopened_exist_plural"
+  | "ready_for_review_assigned"
+  | "ready_for_review_exist_one"
+  | "ready_for_review_exist_plural"
+  | "review_requested_one"
+  | "review_requested_plural"
+  | "converted_to_draft"
+  | "review_request_removed";
+
+/* istanbul ignore next */
+export function getTemplate(key: TemplateKey) {
+  return core.getMultilineInput(key, { required: true }).join("\n");
 }
