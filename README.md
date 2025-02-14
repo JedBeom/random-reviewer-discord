@@ -1,13 +1,12 @@
 # Random Reviewer Discord
 
-[![GitHub Super-Linter](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/ci.yml/badge.svg)
 [![Check dist/](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-**This action is not stable yet** and upcoming minor versions may have breaking changes.
-Specify the full version(e.g. `JedBeom/random-reviewer-discord@v0.1.0`) instead of using `v0`.
+> [!IMPORTANT] > **This action is not stable yet** and upcoming minor versions may have breaking changes.
+> Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.0`) instead of using `v0`.
 
 Automatically assign reviewers at random and notify them on Discord!
 
@@ -15,28 +14,30 @@ Automatically assign reviewers at random and notify them on Discord!
 
 ### Create Discord Webhook URL
 
-> To create Webhook, you should be the admin👑 or have the permission `Manage Webhooks`.
+> To create a Webhook, you should be the admin👑 or have the `Manage Webhooks` permission.
 
-1. In your Discord server, Go to **Server Settings** and click **Integrations**.
+1. In your Discord server, go to **Server Settings** and click **Integrations**.
 1. Click **Webhooks**.
-1. If you haven't created any webhooks, then a new webhook would be created automatically. If not, then click **New Webhook**.
-1. Change name and profile pic as you want. This action doesn't have a default name and profile pic for webhook.
+1. If you haven't created any webhooks, a new webhook will be created automatically. If not, click **New Webhook**.
+1. Change the name and profile picture as you like. This action doesn't have a default name or profile picture for the webhook.
    ![discord_webhook](docs/discord-webhook.png)
-1. Click **Copy Webhook URL** and save it for later. (Or you can come here and copy again!)
+1. Click **Copy Webhook URL** and save it for later. (Or you can come back here and copy it again!)
 
 ### Configure Repository Secrets
 
-> You could pass this step and add these values directly on the `.yaml`, but exposing discord user ids and webhook url is NEVER a good idea.
+> [!WARNING]
+> You can skip this step and add these values directly in the `.yaml` file,
+> but exposing Discord user IDs and the webhook URL is NEVER a good idea.
 
-1. On your Github repository web page, Go to **Settings** and click **Secrets and variables > Actions**.
+1. On your GitHub repository page, go to **Settings** and click **Secrets and variables > Actions**.
    ![github secrets](docs/github-secrets.png)
 1. Under **Repository secrets**, click **New Repository Secret**.
    ![github repository secrets](docs/github-repository-secrets.png)
-1. Name `WEBHOOK_URL` and paste your Discord Webhook URL you created.
-1. Create another secret and name `CANDIDATES` for the name, and the secret contains candidates of reviewers.
+1. Name it `WEBHOOK_URL` and paste your Discord Webhook URL.
+1. Create another secret named `CANDIDATES`, and the secret should contain the candidates for reviewers.
    ![github candidates](docs/github-secrets-candidates.png)
 
-The format should be
+The format should be:
 
 ```
 githubusername1:discorduserid1
@@ -44,9 +45,9 @@ githubusername2:discorduserid2
 githubusername3:discorduserid3
 ```
 
-and so on. To find Discord User ID, follow [this official document](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID).
+and so on. To find a Discord User ID, follow [this official document](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID).
 
-### Add action configuration file
+### Add Action Configuration File
 
 Create a file `.github/workflows/random-reviewer.yaml` and paste the following:
 
@@ -55,8 +56,18 @@ name: Random Reviewer Discord
 
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - review_requested
     branches:
       - main
+  pull_request_review:
+    types:
+      - submitted
+  schedule:
+    - cron: 0 10 * * 6
 
 permissions:
   pull-requests: write
@@ -66,24 +77,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Assign random reviewer
-        uses: JedBeom/random-reviewer-discord@main
+        uses: JedBeom/random-reviewer-discord@v0.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          candidates: ${{ secrets.CANDIDATES }}
+          usernames: ${{ secrets.USERNAMES }}
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          template: "Yay! <@{userID}> is the reviewer of [PR #{prNumber}]({prURL})!"
+          remind_prs_min_age: 24
 ```
 
-> ‼️ Don't forget to add `permissions`! This action only requires `pull-requests: write`.
+> [!IMPORTANT]
+> Don't forget to add `permissions`! This action only requires `pull-requests: write`.
 
-Add the file, commit it on the new branch, push it, and create a PR.
+> [!INFO]
+> For more options and descriptions, see [action.yml](./action.yml).
 
-## Customize it
+Add the file, commit it to a new branch, push it, and create a PR.
 
-### Exclude some candidates
+## Customize It
 
-You may want to exclude some users from candidates. Then add `#` in front of the line.
+### Supported Events and Activity Types
+
+This action supports the following events:
+
+- [pull_request](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request))
+  - opened
+  - reopened
+  - ready_for_review
+  - review_requested
+- [pull_requested](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_review) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review))
+  - submitted
+- [schedule](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule)
+
+Other types would be ignored.
+
+### Exclude Some Usernames
+
+You may want to exclude some users from the usernames. Add `#` in front of the line to exclude them.
 
 For example, if `user2` should be excluded,
 
@@ -93,12 +123,20 @@ user1:1111111111111111111
 user3:3333333333333333333
 ```
 
-adding `#` in front of the line of user2 makes the action ignore them. Remove `#` if you want to include them.
+adding `#` in front of `user2`'s line makes the action ignore them. Remove `#` if you want to include them again.
 
-### Edit the message
+### Edit the Message
 
-You can customize the discord message using the input `template`. `template` supports the following variables:
+You can customize the Discord message using the `template_*` inputs.
+See [action.yml](./action.yml) for the list of templates and examples.
 
-- `{userID}`: discord user id of the selected reviewer. Wrap it with `<@` and `>` to mention.
-- `{prNumber}`: number of the pull request
-- `{prURL}`: Url of the pull request
+Each templates except `template_schedule` supports the following variables:
+
+- `{mention}`: Mention of the reviewer(s). For `pull_request_review.submitted`, this is the mention of the author.
+  - Example: `<@1111111111111111111>` or `<@1111111111111111111> <@2222222222222222222>`
+- `{prTitle}`: The title of the pull request.
+  - Example: `Remove unused dependencies`
+- `{prNumber}`: Number uniquely identifying the pull request within its repository.
+  - Example: `314`
+- `{prURL}`: URL of the pull request.
+  - Example: `https://github.com/JedBeom/random-reviewer-discord/pull/9`
