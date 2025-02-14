@@ -1,4 +1,4 @@
-import { Router, ActivityTypeRouter } from "@/router";
+import { Router, ActivityTypeRouter, Handler } from "@/router";
 import type {
   ActionEvent,
   ActivityType,
@@ -59,6 +59,56 @@ describe("Router", () => {
     };
     await router.route(context);
     expect(mockHandler).toHaveBeenCalledWith(context);
+  });
+
+  test("should call middlewares in the correct order", async () => {
+    type MiddlewareContext = {
+      event: ActionEvent;
+      called: string[];
+    };
+
+    const middleware1 = jest.fn(
+      (next: Handler<MiddlewareContext>) =>
+        async (context: MiddlewareContext) => {
+          context.called.push("1 starts");
+          await next(context);
+          context.called.push("1 ends");
+        },
+    );
+
+    const middleware2 = jest.fn(
+      (next: Handler<MiddlewareContext>) =>
+        async (context: MiddlewareContext) => {
+          context.called.push("2 starts");
+          await next(context);
+          context.called.push("2 ends");
+        },
+    );
+
+    const mockHandler = jest.fn(async (context: MiddlewareContext) => {
+      context.called.push("handler");
+    });
+
+    const router = new Router<MiddlewareContext>();
+    router.use(middleware1);
+    router.use(middleware2);
+    router.add("pull_request", mockHandler);
+
+    const context: MiddlewareContext = {
+      event: { name: "pull_request", activityType: "opened", payload: {} },
+      called: [],
+    };
+    await router.route(context);
+
+    expect(middleware1).toHaveBeenCalled();
+    expect(middleware2).toHaveBeenCalled();
+    expect(context.called).toEqual([
+      "1 starts",
+      "2 starts",
+      "handler",
+      "2 ends",
+      "1 ends",
+    ]);
   });
 });
 
