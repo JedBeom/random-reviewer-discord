@@ -5,12 +5,18 @@
 [![CodeQL](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-<!-- prettier-ignore -->
-> [!IMPORTANT] 
-> **This action is not stable yet** and upcoming minor versions may have breaking changes.
-> Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.0`) instead of using `v0`.
-
 Automatically assign reviewers at random and notify them on Discord!
+
+## Table of Contents
+
+- [How to Install on Your Repository](#how-to-install-on-your-repository)
+  - [Create Discord Webhook URL](#create-discord-webhook-url)
+  - [Configure Repository Secrets](#configure-repository-secrets)
+  - [Add Action Configuration File](#add-action-configuration-file)
+- [Customize It](#customize-it)
+  - [Supported Events and Activity Types](#supported-events-and-activity-types)
+  - [Exclude Some Usernames](#exclude-some-usernames)
+  - [Edit the Message](#edit-the-message)
 
 ## How to Install on Your Repository
 
@@ -50,6 +56,11 @@ githubusername3:discorduserid3
 and so on. To find a Discord User ID, follow [this official document](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID).
 
 ### Add Action Configuration File
+
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> **This action is not stable yet** and upcoming minor versions may have breaking changes.
+> Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.0`) instead of using `v0`.
 
 Create a file `.github/workflows/random-reviewer.yaml` and paste the following:
 
