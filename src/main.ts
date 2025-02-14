@@ -2,12 +2,17 @@ import * as core from "@actions/core";
 
 import { initContext } from "@/github";
 import { ActivityTypeRouter, Router } from "@/router";
-import type { RouterContext, PullRequestActivityType } from "@/types";
+import type {
+  RouterContext,
+  PullRequestActivityType,
+  PullRequestReviewActivityType,
+} from "@/types";
 import {
   fallbackHandler,
   handleOpened,
   handleReopenOrReadyForReview,
   handleReviewRequested,
+  handleReviewSubmitted,
   handleSchedule,
 } from "@/handlers";
 
@@ -24,9 +29,19 @@ export async function main() {
     prRouter.fallback(fallbackHandler);
   }
 
+  const reviewRouter = new ActivityTypeRouter<
+    RouterContext,
+    PullRequestReviewActivityType
+  >();
+  {
+    reviewRouter.add("submitted", handleReviewSubmitted);
+    reviewRouter.fallback(fallbackHandler);
+  }
+
   const router = new Router<RouterContext>();
   {
     router.add("pull_request", prRouter.toHandler());
+    router.add("pull_request_review", reviewRouter.toHandler());
     router.add("schedule", handleSchedule);
     router.fallback(fallbackHandler);
   }

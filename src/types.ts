@@ -1,6 +1,9 @@
 import type { WebhookPayload } from "@actions/github/lib/interfaces.d.ts";
 import type { Octokit } from "@octokit/action";
-import type { PullRequestEvent } from "@octokit/webhooks-types";
+import type {
+  PullRequestEvent,
+  PullRequestReviewEvent,
+} from "@octokit/webhooks-types";
 import type { DiscordWebhookClient } from "@/discord";
 
 export type Username = {
@@ -61,6 +64,7 @@ export type ActionEventName =
   | "workflow_run";
 
 export type PullRequestActivityType = PullRequestEvent["action"];
+export type PullRequestReviewActivityType = PullRequestReviewEvent["action"];
 
 export interface ScheduleEvent {
   action: "";
@@ -71,7 +75,10 @@ export interface ScheduleEvent {
   actor: string;
 }
 
-export type ActivityType = PullRequestActivityType | "";
+export type ActivityType =
+  | PullRequestActivityType
+  | PullRequestReviewActivityType
+  | "";
 
 export type ActionEvent = {
   name: ActionEventName;
@@ -98,4 +105,5 @@ export type TemplateKey =
   | "review_requested_plural"
   | "converted_to_draft"
   | "review_request_removed"
-  | "schedule";
+  | "schedule"
+  | "review_submitted";

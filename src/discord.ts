@@ -84,10 +84,10 @@ export class DiscordWebhookClient {
 }
 
 /* istanbul ignore next */
-export async function notifyReviewer(
+export async function notifyWithTemplate(
   client: DiscordWebhookClient,
   template: string,
-  reviewer: Username | Username[],
+  username: Username | Username[],
   pr: PullRequest,
 ) {
   if (template === "") {
@@ -95,10 +95,10 @@ export async function notifyReviewer(
   }
 
   let mention = "";
-  if ("length" in reviewer) {
-    mention = reviewer.map(({ discord }) => idToMention(discord)).join(" ");
+  if ("length" in username) {
+    mention = username.map(({ discord }) => idToMention(discord)).join(" ");
   } else {
-    mention = idToMention(reviewer.discord);
+    mention = idToMention(username.discord);
   }
 
   const content = formatString(template, {

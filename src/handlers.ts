@@ -1,9 +1,12 @@
 import * as core from "@actions/core";
 import type {
+  PullRequest,
   PullRequestEvent,
   PullRequestOpenedEvent,
   PullRequestReadyForReviewEvent,
+  PullRequestReopenedEvent,
   PullRequestReviewRequestedEvent,
+  PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
 
 import type {
@@ -21,7 +24,7 @@ import {
   chooseReviewer,
   getTemplate,
 } from "@/github";
-import { idToMention, notifyReviewer } from "@/discord";
+import { idToMention, notifyWithTemplate } from "@/discord";
 
 export async function fallbackHandler(c: RouterContext) {
   core.setFailed(
@@ -52,7 +55,11 @@ export async function handleOpened(c: RouterContext) {
 }
 
 export async function handleReopenOrReadyForReview(c: RouterContext) {
-  const pr = (c.event.payload! as PullRequestReadyForReviewEvent).pull_request;
+  const pr = (
+    c.event.payload! as
+      | PullRequestReopenedEvent
+      | PullRequestReadyForReviewEvent
+  ).pull_request;
   const isReopened = c.event.activityType === "reopened";
 
   if (!isReadyToReview(pr)) {
@@ -87,7 +94,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     const tmpl = getTemplate(
       isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
     );
-    await notifyReviewer(c.webhookClient, tmpl, reviewer, pr);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
     core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
@@ -101,7 +108,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural",
   );
 
-  await notifyReviewer(c.webhookClient, tmpl, reviewers, pr);
+  await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
   core.info("Notified them on Discord.");
 }
 
@@ -117,7 +124,7 @@ export async function handleReviewRequested(c: RouterContext) {
   // TODO: support teams as reviewers
   const requestedReviewers = pr.requested_reviewers
     .filter((reviewer) => "login" in reviewer)
-    .map((user) => user.login);
+    .map((user) => user.login.toLowerCase());
 
   if (requestedReviewers.length > 1) {
     core.info("This pr has multiple reviewers.");
@@ -126,7 +133,7 @@ export async function handleReviewRequested(c: RouterContext) {
     );
 
     const tmpl = getTemplate("review_requested_plural");
-    await notifyReviewer(c.webhookClient, tmpl, reviewers, pr);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
     return core.info("Notified them on Discord.");
   }
 
@@ -140,7 +147,7 @@ export async function handleReviewRequested(c: RouterContext) {
   }
 
   const tmpl = getTemplate("review_requested_one");
-  await notifyReviewer(c.webhookClient, tmpl, reviewer, pr);
+  await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
@@ -184,6 +191,28 @@ export async function handleSchedule(c: RouterContext) {
   core.info("Notified them on Discord.");
 }
 
+export async function handleReviewSubmitted(c: RouterContext) {
+  const event = c.event.payload! as PullRequestReviewSubmittedEvent;
+  const author = c.usernames.find(
+    ({ github }) => github === event.pull_request.user.login.toLowerCase(),
+  );
+
+  if (author === undefined) {
+    core.info(
+      `The author @${event.pull_request.user.login} is not found. Stop running.`,
+    );
+    return;
+  }
+
+  const tmpl = getTemplate("review_submitted");
+  notifyWithTemplate(
+    c.webhookClient,
+    tmpl,
+    author,
+    event.pull_request as PullRequest,
+  );
+}
+
 export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const event = c.event.payload! as PullRequestEvent;
 
@@ -197,6 +226,6 @@ export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const tmpl = getTemplate(tmplKey);
   core.info(`Use the template ${tmplKey}: """${tmpl}"""`);
 
-  await notifyReviewer(c.webhookClient, tmpl, reviewer, event.pull_request);
+  await notifyWithTemplate(c.webhookClient, tmpl, reviewer, event.pull_request);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }

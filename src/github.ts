@@ -79,7 +79,7 @@ export async function getRequestedReviewers(
   });
 
   // TODO: support teams
-  return data.users.map((user) => user.login);
+  return data.users.map((user) => user.login.toLowerCase());
 }
 
 /* istanbul ignore next */
@@ -95,7 +95,7 @@ export async function getPreviousReviewers(
 
   return reviews
     .filter((review) => !!review.user)
-    .map((review) => review.user!.login);
+    .map((review) => review.user!.login.toLowerCase());
 }
 
 export function chooseReviewer(
@@ -196,10 +196,10 @@ export function groupReviewers(
         continue;
       }
       if (group[reviewer.login] === undefined) {
-        group[reviewer.login] = [];
+        group[reviewer.login.toLowerCase()] = [];
       }
 
-      group[reviewer.login].push(pull);
+      group[reviewer.login.toLowerCase()].push(pull);
     }
   }
 

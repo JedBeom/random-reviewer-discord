@@ -89,6 +89,13 @@ inputs:
     required: false
     default: >-
       🔔 Good afternoon! These PRs are waiting for your reviews!
+  template_review_submitted:
+    description: >-
+      Message template used when a review was submitted.
+    required: false
+    default: >-
+      ✉️ {mention}, you got a new review at
+      [{prTitle} #{prNumber}]({prURL}).
 
 runs:
   using: node20

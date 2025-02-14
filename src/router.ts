@@ -8,10 +8,7 @@ export type Handler<C extends IContext> = (context: C) => Promise<void>;
 export type Middleware<C extends IContext> = (next: Handler<C>) => Handler<C>;
 
 export class Router<C extends IContext> {
-  private router: Record<Partial<ActionEventName>, Handler<C>> = {} as Record<
-    Partial<ActionEventName>,
-    Handler<C>
-  >;
+  private router = {} as Record<Partial<ActionEventName>, Handler<C>>;
   private fallbackHandler: Handler<C> = async (_: C) => {};
   private middlewares = [] as Middleware<C>[];
 
@@ -45,10 +42,7 @@ export class Router<C extends IContext> {
 }
 
 export class ActivityTypeRouter<C extends IContext, T> {
-  private router: Record<Partial<ActivityType>, Handler<C>> = {} as Record<
-    Partial<ActivityType>,
-    Handler<C>
-  >;
+  private router = {} as Record<Partial<ActivityType>, Handler<C>>;
   private fallbackHandler: Handler<C> = async (_: C) => {};
 
   constructor() {}
