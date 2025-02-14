@@ -37,8 +37,7 @@ Automatically assign reviewers at random and notify them on Discord!
 1. Under **Repository secrets**, click **New Repository Secret**.
    ![github repository secrets](docs/github-repository-secrets.png)
 1. Name it `WEBHOOK_URL` and paste your Discord Webhook URL.
-1. Create another secret named `CANDIDATES`, and the secret should contain the candidates for reviewers.
-   ![github candidates](docs/github-secrets-candidates.png)
+1. Create another secret named `USERNAMES`, and the secret should contain the usernames for reviewers.
 
 The format should be:
 
