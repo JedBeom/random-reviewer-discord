@@ -48,7 +48,7 @@ describe("Router", () => {
       PullRequestActivityType
     >();
     prRouter.add("assigned", mockHandler);
-    router.add("pull_request", prRouter);
+    router.add("pull_request", prRouter.toHandler());
 
     const context: TestContext = {
       event: {

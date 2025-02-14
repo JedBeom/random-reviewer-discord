@@ -5,18 +5,23 @@ interface IContext {
 }
 
 export type Handler<C extends IContext> = (context: C) => Promise<void>;
-type RouterChild<C extends IContext> =
-  | ActivityTypeRouter<C, unknown>
-  | Handler<C>;
+export type Middleware<C extends IContext> = (next: Handler<C>) => Handler<C>;
 
 export class Router<C extends IContext> {
-  private router: Record<Partial<ActionEventName>, RouterChild<C>> =
-    {} as Record<Partial<ActionEventName>, RouterChild<C>>;
+  private router: Record<Partial<ActionEventName>, Handler<C>> = {} as Record<
+    Partial<ActionEventName>,
+    Handler<C>
+  >;
   private fallbackHandler: Handler<C> = async (_: C) => {};
+  private middlewares = [] as Middleware<C>[];
 
   constructor() {}
 
-  add(name: ActionEventName, handler: RouterChild<C>) {
+  use(middleware: Middleware<C>) {
+    this.middlewares.push(middleware);
+  }
+
+  add(name: ActionEventName, handler: Handler<C>) {
     this.router[name] = handler;
   }
 
@@ -24,17 +29,20 @@ export class Router<C extends IContext> {
     this.fallbackHandler = handler;
   }
 
-  async route(context: C) {
+  async route(context: C): Promise<void> {
+    let handler: Handler<C>;
+
     if (this.router[context.event.name] === undefined) {
-      return this.fallbackHandler(context);
+      handler = this.fallbackHandler;
+    } else {
+      handler = this.router[context.event.name];
     }
 
-    const child = this.router[context.event.name];
-    if (typeof child === "function") {
-      return child(context);
+    for (let i = this.middlewares.length - 1; i >= 0; i--) {
+      handler = this.middlewares[i](handler);
     }
 
-    return child.route(context);
+    return handler(context);
   }
 }
 
@@ -55,12 +63,19 @@ export class ActivityTypeRouter<C extends IContext, T> {
     this.fallbackHandler = handler;
   }
 
-  async route(context: C) {
+  async route(context: C): Promise<void> {
+    let handler: Handler<C>;
+
     if (this.router[context.event.activityType] === undefined) {
-      return this.fallbackHandler(context);
+      handler = this.fallbackHandler;
+    } else {
+      handler = this.router[context.event.activityType];
     }
 
-    const handler = this.router[context.event.activityType];
     return handler(context);
+  }
+
+  toHandler() {
+    return this.route;
   }
 }

@@ -30,7 +30,7 @@ export async function main() {
 
   const router = new Router<RouterContext>();
   {
-    router.add("pull_request", prRouter);
+    router.add("pull_request", prRouter.toHandler());
     router.add("schedule", handleSchedule);
     router.fallback(fallbackHandler);
   }
