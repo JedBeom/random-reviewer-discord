@@ -144,10 +144,6 @@ export async function handleReviewRequested(c: RouterContext) {
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
-export async function handleReviewRequestedRemoved() {
-  core.warning("Not implemented yet");
-}
-
 export async function handleSchedule(c: RouterContext) {
   const repo = (c.event.payload as ScheduleEvent).repo;
   const prs = await listPRs(repo.owner, repo.repo);
@@ -186,13 +182,6 @@ export async function handleSchedule(c: RouterContext) {
 
   await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));
   core.info("Notified them on Discord.");
-}
-
-export async function handleConvertedToDraft() {
-  // TODO: use actions artifacts to restore message ID
-  // and edit it
-  // Requested Reviewers do stay in place despite being drafted
-  core.warning("Not implemented yet");
 }
 
 export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {

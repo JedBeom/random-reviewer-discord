@@ -5,11 +5,9 @@ import { ActivityTypeRouter, Router } from "@/router";
 import type { RouterContext, PullRequestActivityType } from "@/types";
 import {
   fallbackHandler,
-  handleConvertedToDraft,
   handleOpened,
   handleReopenOrReadyForReview,
   handleReviewRequested,
-  handleReviewRequestedRemoved,
   handleSchedule,
 } from "@/handlers";
 
@@ -23,8 +21,6 @@ export async function main() {
     prRouter.add("reopened", handleReopenOrReadyForReview);
     prRouter.add("ready_for_review", handleReopenOrReadyForReview);
     prRouter.add("review_requested", handleReviewRequested);
-    prRouter.add("review_request_removed", handleReviewRequestedRemoved);
-    prRouter.add("converted_to_draft", handleConvertedToDraft);
     prRouter.fallback(fallbackHandler);
   }
 
