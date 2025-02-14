@@ -72,6 +72,25 @@ export default [
       "no-console": "off",
       // avoid duplicate with typescript-eslint/no-unused-vars
       "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/*.js"],
+              message: "Avoid *.js import.",
+            },
+          ],
+        },
+      ],
     },
   },
 ];

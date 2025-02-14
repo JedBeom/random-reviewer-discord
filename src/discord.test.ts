@@ -1,35 +1,45 @@
 import { describe, expect, test } from "@jest/globals";
-import { formatString } from "@/discord";
-import { type FormatParam } from "@/types";
+import { formatString, idToMention } from "@/discord";
+import type { TemplateData } from "@/types";
 
-const sets = [
+const setsFormatString = [
   {
     id: 1,
-    template: "<@{userID}>, you are the reviewer of [PR #{prNumber}]({prURL})!",
-    param: {
-      userID: "1234",
+    template:
+      "{mention}, you are the reviewer of [{prTitle      } #{prNumber}]({prURL})!",
+    data: {
+      mention: "<@1234>",
+      prTitle: "LEMON MELON COOKIE",
       prNumber: "77",
       prURL: "https://github.com",
-    } as FormatParam,
-    expected: "<@1234>, you are the reviewer of [PR #77](https://github.com)!",
+    } as TemplateData,
+    expected:
+      "<@1234>, you are the reviewer of [LEMON MELON COOKIE #77](https://github.com)!",
   },
   {
     id: 2,
-    template: "Reviewer of [PR #{prNumber}]({prURL}) is <@{userID}>!",
-    param: {
-      userID: "20250206",
+    template: "Reviewer of [{prTitle} #{ prNumber}]({ prURL }) is {mention}!",
+    data: {
+      mention: "<@20250206>",
+      prTitle: "MOCHIMOCHI",
       prNumber: "91",
       prURL: "https://github.com/JedBeom/cyes",
-    } as FormatParam,
+    } as TemplateData,
     expected:
-      "Reviewer of [PR #91](https://github.com/JedBeom/cyes) is <@20250206>!",
+      "Reviewer of [MOCHIMOCHI #91](https://github.com/JedBeom/cyes) is <@20250206>!",
   },
 ];
 
 describe("formatString", () => {
-  for (const set of sets) {
+  for (const set of setsFormatString) {
     test(`id: ${set.id}`, () => {
-      expect(formatString(set.template, set.param)).toBe(set.expected);
+      expect(formatString(set.template, set.data)).toBe(set.expected);
     });
   }
+});
+
+describe("idToMention", () => {
+  test("1234 to <@1234>", () => {
+    expect(idToMention("1234")).toBe("<@1234>");
+  });
 });
