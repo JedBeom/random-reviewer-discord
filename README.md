@@ -16,6 +16,7 @@ Automatically assign reviewers at random and notify them on Discord!
 
 ### Create Discord Webhook URL
 
+> [!NOTE]
 > To create a Webhook, you should be the admin👑 or have the `Manage Webhooks` permission.
 
 1. In your Discord server, go to **Server Settings** and click **Integrations**.
