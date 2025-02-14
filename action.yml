@@ -7,8 +7,8 @@ branding:
   color: green
 
 inputs:
-  candidates:
-    description: Pairs of usernames(GitHub, Discord) of candidates.
+  usernames:
+    description: Pairs of usernames(GitHub, Discord) of reviewers.
     required: true
   webhook_url:
     description: Discord Webhook URL
@@ -84,18 +84,6 @@ inputs:
     default: >-
       🔄 {mention}, you were requested a review for
       [{prTitle} #{prNumber}]({prURL}).
-  template_converted_to_draft:
-    description: >-
-      Message added to the existing message
-      when a PR is converted to a draft.
-    required: false
-    default: This PR was converted to draft.
-  template_review_request_removed:
-    description: >-
-      Message added to the existing message
-      when a review request is removed.
-    required: false
-    default: This review request was removed.
   template_schedule:
     description: The opening of a review reminder message
     required: false

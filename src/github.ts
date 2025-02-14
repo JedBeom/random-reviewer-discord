@@ -42,8 +42,7 @@ export function getActionEvent(): ActionEvent {
 export function initContext(): RouterContext {
   const event = getActionEvent();
 
-  const candidatesInput = core.getMultilineInput("candidates");
-  const usernames = parseUsernames(candidatesInput);
+  const usernames = parseUsernames(core.getMultilineInput("usernames"));
 
   if (usernames.length === 0) {
     throw new Error("No candidates. Stop running.");
