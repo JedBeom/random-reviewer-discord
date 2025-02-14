@@ -1,6 +1,7 @@
 import type { WebhookPayload } from "@actions/github/lib/interfaces.d.ts";
 import type { Octokit } from "@octokit/action";
 import type { PullRequestEvent } from "@octokit/webhooks-types";
+import type { DiscordWebhookClient } from "@/discord";
 
 export type Username = {
   github: string;
@@ -81,7 +82,7 @@ export type ActionEvent = {
 export type RouterContext = {
   event: ActionEvent;
   usernames: Username[];
-  webhookURL: URL;
+  webhookClient: DiscordWebhookClient;
   octokit: Octokit;
 };
 export type TemplateKey =

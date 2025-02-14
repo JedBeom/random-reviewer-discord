@@ -26,30 +26,66 @@ interface IDiscordWebhookMessage {
 }
 
 // See: https://discord.com/developers/docs/resources/webhook#execute-webhook
-/* istanbul ignore next */
-export async function sendMessage(
-  webhookURL: URL,
-  content: string,
-): Promise<string> {
-  webhookURL.searchParams.delete("wait");
-  webhookURL.searchParams.append("wait", "true");
+export class DiscordWebhookClient {
+  private webhookURL: URL;
+  private client: httpm.HttpClient;
 
-  const client = new httpm.HttpClient("JedBeom/random-reviewer-discord");
-  const { result } = await client.postJson<IDiscordWebhookMessage>(
-    webhookURL.href,
-    { content },
-  );
+  constructor(webhookURL: URL) {
+    webhookURL.searchParams.delete("wait");
+    webhookURL.searchParams.append("wait", "true");
+    this.webhookURL = webhookURL;
 
-  if (result === null) {
-    throw new Error("Discord Webhook Message is null");
+    this.client = new httpm.HttpClient("JedBeom/random-reviewer-discord");
   }
 
-  return result.id;
+  private webhookURLWithID(id: string) {
+    const idURL = structuredClone(this.webhookURL);
+    idURL.pathname += "/messages/" + id;
+    return idURL;
+  }
+
+  async getMessage(id: string): Promise<IDiscordWebhookMessage> {
+    const { result } = await this.client.getJson<IDiscordWebhookMessage>(
+      this.webhookURLWithID(id).href,
+    );
+
+    if (result === null) {
+      throw new Error("Could not get the message");
+    }
+
+    return result;
+  }
+
+  async postMessage(content: string): Promise<IDiscordWebhookMessage> {
+    const { result } = await this.client.postJson<IDiscordWebhookMessage>(
+      this.webhookURL.href,
+      { content },
+    );
+
+    if (result === null) {
+      throw new Error("Discord Webhook Message is null");
+    }
+
+    return result;
+  }
+
+  async patchMessage(id: string, message: IDiscordWebhookMessage) {
+    const { result } = await this.client.patchJson<IDiscordWebhookMessage>(
+      this.webhookURLWithID(id).href,
+      message,
+    );
+
+    if (result === null) {
+      throw new Error("Could not get the message");
+    }
+
+    return result;
+  }
 }
 
 /* istanbul ignore next */
 export async function notifyReviewer(
-  webhookURL: URL,
+  client: DiscordWebhookClient,
   template: string,
   reviewer: Username | Username[],
   pr: PullRequest,
@@ -72,6 +108,6 @@ export async function notifyReviewer(
     prURL: pr.html_url,
   });
 
-  return sendMessage(webhookURL, content);
+  return client.postMessage(content);
   // TODO: get message ID and upload to actions artifacts
 }

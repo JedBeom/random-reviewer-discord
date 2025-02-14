@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 
-import { getDefaultContext } from "@/github";
+import { initContext } from "@/github";
 import { ActivityTypeRouter, Router } from "@/router";
 import type { RouterContext, PullRequestActivityType } from "@/types";
 import {
@@ -37,7 +37,7 @@ export async function main() {
 
   core.info("Execute router.route()");
   try {
-    const context = getDefaultContext();
+    const context = initContext();
     await router.route(context);
   } catch (error) {
     if (error instanceof Error) {

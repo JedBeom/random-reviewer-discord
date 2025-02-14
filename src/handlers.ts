@@ -21,7 +21,7 @@ import {
   chooseReviewer,
   getTemplate,
 } from "@/github";
-import { idToMention, notifyReviewer, sendMessage } from "@/discord";
+import { idToMention, notifyReviewer } from "@/discord";
 
 export async function fallbackHandler(c: RouterContext) {
   core.setFailed(
@@ -87,7 +87,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     const tmpl = getTemplate(
       isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
     );
-    await notifyReviewer(c.webhookURL, tmpl, reviewer, pr);
+    await notifyReviewer(c.webhookClient, tmpl, reviewer, pr);
     core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
@@ -101,7 +101,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural",
   );
 
-  await notifyReviewer(c.webhookURL, tmpl, reviewers, pr);
+  await notifyReviewer(c.webhookClient, tmpl, reviewers, pr);
   core.info("Notified them on Discord.");
 }
 
@@ -126,7 +126,7 @@ export async function handleReviewRequested(c: RouterContext) {
     );
 
     const tmpl = getTemplate("review_requested_plural");
-    await notifyReviewer(c.webhookURL, tmpl, reviewers, pr);
+    await notifyReviewer(c.webhookClient, tmpl, reviewers, pr);
     return core.info("Notified them on Discord.");
   }
 
@@ -140,7 +140,7 @@ export async function handleReviewRequested(c: RouterContext) {
   }
 
   const tmpl = getTemplate("review_requested_one");
-  await notifyReviewer(c.webhookURL, tmpl, reviewer, pr);
+  await notifyReviewer(c.webhookClient, tmpl, reviewer, pr);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
@@ -184,7 +184,7 @@ export async function handleSchedule(c: RouterContext) {
 
   const msg = getTemplate("schedule");
 
-  await sendMessage(c.webhookURL, msg + "\n\n" + lines.join("\n"));
+  await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));
   core.info("Notified them on Discord.");
 }
 
@@ -208,6 +208,6 @@ export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const tmpl = getTemplate(tmplKey);
   core.info(`Use the template ${tmplKey}: """${tmpl}"""`);
 
-  await notifyReviewer(c.webhookURL, tmpl, reviewer, event.pull_request);
+  await notifyReviewer(c.webhookClient, tmpl, reviewer, event.pull_request);
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }

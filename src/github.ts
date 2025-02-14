@@ -12,6 +12,7 @@ import type {
   ScheduleEvent,
   TemplateKey,
 } from "@/types";
+import { DiscordWebhookClient } from "@/discord";
 
 /* istanbul ignore next */
 function createScheduleEvent(): ScheduleEvent {
@@ -38,7 +39,7 @@ export function getActionEvent(): ActionEvent {
 }
 
 /* istanbul ignore next */
-export function getDefaultContext(): RouterContext {
+export function initContext(): RouterContext {
   const event = getActionEvent();
 
   const candidatesInput = core.getMultilineInput("candidates");
@@ -50,13 +51,14 @@ export function getDefaultContext(): RouterContext {
 
   const webhookURLInput = core.getInput("webhook_url");
   const webhookURL = new URL(webhookURLInput);
+  const webhookClient = new DiscordWebhookClient(webhookURL);
 
   const octokit = new Octokit();
 
   return {
     event,
     usernames,
-    webhookURL,
+    webhookClient,
     octokit,
   };
 }
