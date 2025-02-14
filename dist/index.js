@@ -61835,14 +61835,130 @@ function getApiBaseUrl() {
   return process.env["GITHUB_API_URL"] || "https://api.github.com";
 }
 
-const event = githubExports.context.payload;
-function isReadyToReview() {
-    return !event.pull_request.draft;
+var libExports = requireLib();
+
+function formatString(template, data) {
+    for (const key in data) {
+        template = template.replaceAll(new RegExp(`{ *${key} *}`, "g"), data[key]);
+    }
+    return template;
 }
-function hasReviewer() {
-    return event.pull_request.requested_reviewers.length > 0;
+function idToMention(id) {
+    return "<@" + id + ">";
 }
-function selectReviewer(usernames, exclude) {
+// See: https://discord.com/developers/docs/resources/webhook#execute-webhook
+class DiscordWebhookClient {
+    webhookURL;
+    client;
+    constructor(webhookURL) {
+        webhookURL.searchParams.delete("wait");
+        webhookURL.searchParams.append("wait", "true");
+        this.webhookURL = webhookURL;
+        this.client = new libExports.HttpClient("JedBeom/random-reviewer-discord");
+    }
+    webhookURLWithID(id) {
+        const idURL = structuredClone(this.webhookURL);
+        idURL.pathname += "/messages/" + id;
+        return idURL;
+    }
+    async getMessage(id) {
+        const { result } = await this.client.getJson(this.webhookURLWithID(id).href);
+        if (result === null) {
+            throw new Error("Could not get the message");
+        }
+        return result;
+    }
+    async postMessage(content) {
+        const { result } = await this.client.postJson(this.webhookURL.href, { content });
+        if (result === null) {
+            throw new Error("Discord Webhook Message is null");
+        }
+        return result;
+    }
+    async patchMessage(id, message) {
+        const { result } = await this.client.patchJson(this.webhookURLWithID(id).href, message);
+        if (result === null) {
+            throw new Error("Could not get the message");
+        }
+        return result;
+    }
+}
+/* istanbul ignore next */
+async function notifyWithTemplate(client, template, username, pr) {
+    if (template === "") {
+        template = "NO TEMPLATE WAS GIVEN!!";
+    }
+    let mention = "";
+    if ("length" in username) {
+        mention = username.map(({ discord }) => idToMention(discord)).join(" ");
+    }
+    else {
+        mention = idToMention(username.discord);
+    }
+    const content = formatString(template, {
+        mention: mention,
+        prTitle: pr.title,
+        prNumber: pr.number.toString(),
+        prURL: pr.html_url,
+    });
+    return client.postMessage(content);
+    // TODO: get message ID and upload to actions artifacts
+}
+
+/* istanbul ignore next */
+function createScheduleEvent() {
+    return {
+        action: "",
+        repo: githubExports.context.repo,
+        actor: githubExports.context.actor,
+    };
+}
+/* istanbul ignore next */
+function getActionEvent() {
+    const name = githubExports.context.eventName;
+    let payload = githubExports.context.payload;
+    if (name === "schedule") {
+        payload = createScheduleEvent();
+    }
+    return {
+        name: githubExports.context.eventName,
+        activityType: githubExports.context.action,
+        payload,
+    };
+}
+/* istanbul ignore next */
+function initContext() {
+    const event = getActionEvent();
+    const usernames = parseUsernames(coreExports.getMultilineInput("usernames"));
+    if (usernames.length === 0) {
+        throw new Error("No candidates. Stop running.");
+    }
+    const webhookURLInput = coreExports.getInput("webhook_url");
+    const webhookURL = new URL(webhookURLInput);
+    const webhookClient = new DiscordWebhookClient(webhookURL);
+    const octokit = new Octokit();
+    return {
+        event,
+        usernames,
+        webhookClient,
+        octokit,
+    };
+}
+/* istanbul ignore next */
+function isReadyToReview(pr) {
+    return !pr.draft;
+}
+/* istanbul ignore next */
+async function getRequestedReviewers(octokit, pr) {
+    const { data } = await octokit.rest.pulls.listRequestedReviewers({
+        owner: pr.base.repo.owner.login,
+        repo: pr.base.repo.name,
+        pull_number: pr.number,
+    });
+    // TODO: support teams
+    return data.users.map((user) => user.login.toLowerCase());
+}
+function chooseReviewer(usernames, exclude) {
     // get candidates and exclude the creator
     const candidates = usernames.filter((username) => !exclude.includes(username.github));
     if (candidates.length === 0) {
@@ -61852,7 +61968,7 @@ function selectReviewer(usernames, exclude) {
     return candidates[Math.floor(Math.random() * candidates.length)];
 }
 function parseUsernames(input) {
-    // env format
+    // format
     // githubUsername1:discordUsername1
     // githubUsername2:discordUsername2
     // #githubUsername3:discordUsername3 <-- ignored
@@ -61870,83 +61986,269 @@ function parseUsernames(input) {
     });
     return candidates;
 }
-async function assignReviewer(reviewer) {
+/* istanbul ignore next */
+async function assignReviewer(pr, reviewer) {
     const octokit = new Octokit();
-    const repo = githubExports.context.repo;
-    const number = githubExports.context.issue.number;
     await octokit.rest.issues.addAssignees({
-        ...repo,
+        owner: pr.base.repo.owner.login,
+        repo: pr.base.repo.name,
         assignees: [reviewer.github],
-        issue_number: number,
+        issue_number: pr.number,
     });
     return octokit.rest.pulls.requestReviewers({
-        ...repo,
-        pull_number: githubExports.context.issue.number,
+        owner: pr.base.repo.owner.login,
+        repo: pr.base.repo.name,
+        pull_number: pr.number,
         reviewers: [reviewer.github],
     });
 }
-
-var libExports = requireLib();
-
-const DEFAULT_TEMPLATE = `- Reviewer: <@{userID}>\n- PR: [#{prNumber}]({prURL})`;
-function formatString(template, param) {
-    for (const key in param) {
-        template = template.replace(`{${key}}`, param[key]);
-    }
-    return template;
-}
-async function sendMessage(webhookURL, template, reviewer) {
-    if (template === "") {
-        template = DEFAULT_TEMPLATE;
-    }
-    const content = formatString(template, {
-        userID: reviewer.discord,
-        prNumber: event.pull_request.number.toString(),
-        prURL: event.pull_request.html_url,
+/* istanbul ignore next */
+async function listPRs(owner, repo) {
+    const octokit = new Octokit();
+    const { data: pulls } = await octokit.rest.pulls.list({
+        owner,
+        repo,
+        state: "open",
+        sort: "popularity",
+        direction: "asc",
+        per_page: 15, // TODO: get from input
     });
-    const client = new libExports.HttpClient(event.repository.name);
-    return client.postJson(webhookURL, { content });
+    return pulls;
+}
+function groupReviewers(pulls, minAge) {
+    const now = new Date();
+    const group = {};
+    for (const pull of pulls) {
+        if (pull.draft) {
+            continue;
+        }
+        // TODO: compare lastNotifiedAt (when the message was sent) instead of created_at
+        const createdAt = new Date(pull.created_at);
+        const diffHours = (now.getTime() - createdAt.getTime()) / 1000 / 60 / 60;
+        if (diffHours < minAge) {
+            continue;
+        }
+        for (const reviewer of pull.requested_reviewers) {
+            if (!("login" in reviewer)) {
+                // TODO: suppor teams
+                continue;
+            }
+            if (group[reviewer.login] === undefined) {
+                group[reviewer.login.toLowerCase()] = [];
+            }
+            group[reviewer.login.toLowerCase()].push(pull);
+        }
+    }
+    return group;
+}
+/* istanbul ignore next */
+function getTemplate(key) {
+    return coreExports.getMultilineInput("template_" + key, { required: true })
+        .join("\n");
+}
+
+class Router {
+    router = {};
+    fallbackHandler = async (_) => { };
+    middlewares = [];
+    constructor() { }
+    use(middleware) {
+        this.middlewares.push(middleware);
+    }
+    add(name, handler) {
+        this.router[name] = handler;
+    }
+    fallback(handler) {
+        this.fallbackHandler = handler;
+    }
+    async route(context) {
+        let handler = this.fallbackHandler;
+        if (this.router[context.event.name] !== undefined) {
+            handler = this.router[context.event.name];
+        }
+        for (let i = this.middlewares.length - 1; i >= 0; i--) {
+            handler = this.middlewares[i](handler);
+        }
+        return handler(context);
+    }
+}
+class ActivityTypeRouter {
+    router = {};
+    fallbackHandler = async (_) => { };
+    constructor() { }
+    add(name, handler) {
+        this.router[name] = handler;
+    }
+    fallback(handler) {
+        this.fallbackHandler = handler;
+    }
+    async route(context) {
+        let handler = this.fallbackHandler;
+        if (this.router[context.event.activityType] !== undefined) {
+            handler = this.router[context.event.activityType];
+        }
+        return handler(context);
+    }
+    toHandler() {
+        return this.route.bind(this);
+    }
+}
+
+async function fallbackHandler(c) {
+    coreExports.setFailed(`The event ${c.event.name}.${c.event.activityType} is not supported.`);
+    coreExports.setFailed(`Edit the yaml file and make sure to specify the supported types only.`);
+}
+async function handleOpened(c) {
+    const pr = c.event.payload.pull_request;
+    if (!isReadyToReview(pr)) {
+        coreExports.info("This pr is draft. No-op.");
+        return;
+    }
+    const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
+    if (requestedReviewers.length > 0) {
+        coreExports.info(`This pr has the reviewers: ${requestedReviewers.join(", ")}. Stop running.`);
+        return;
+    }
+    return assignAndNotify(c, "opened");
+}
+async function handleReopenOrReadyForReview(c) {
+    const pr = c.event.payload.pull_request;
+    const isReopened = c.event.activityType === "reopened";
+    if (!isReadyToReview(pr)) {
+        coreExports.info("This pr is draft. No-op.");
+        return;
+    }
+    // Requested Reviewers do stay in place
+    // despite being drafted and being set ready for review
+    const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
+    if (requestedReviewers.length === 0) {
+        coreExports.info(`No requested reviewers. Start assigning a new reviewer.`);
+        return assignAndNotify(c, isReopened ? "reopened_assigned" : "ready_for_review_assigned");
+    }
+    if (requestedReviewers.length === 1) {
+        coreExports.info(`This pr has the reviewer: ${requestedReviewers[0]}.`);
+        const reviewer = c.usernames.find(({ github }) => github === requestedReviewers[0]);
+        if (reviewer === undefined) {
+            coreExports.setFailed(`Can't find ${requestedReviewers[0]} from the candidates.`);
+            return;
+        }
+        const tmpl = getTemplate(isReopened ? "reopened_exist_one" : "ready_for_review_exist_one");
+        await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+        coreExports.info(`Notified @${reviewer.github} on Discord.`);
+    }
+    coreExports.info(`This pr has the reviewer(s): ${requestedReviewers.join(", ")}.`);
+    coreExports.info(`Start notifying them.`);
+    const reviewers = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
+    const tmpl = getTemplate(isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural");
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+    coreExports.info("Notified them on Discord.");
+}
+async function handleReviewRequested(c) {
+    const pr = c.event.payload.pull_request;
+    if (pr.requested_reviewers.length === 0) {
+        return coreExports.error("No requested reviewers although the event is review_requested.");
+    }
+    // TODO: support teams as reviewers
+    const requestedReviewers = pr.requested_reviewers
+        .filter((reviewer) => "login" in reviewer)
+        .map((user) => user.login.toLowerCase());
+    if (requestedReviewers.length > 1) {
+        coreExports.info("This pr has multiple reviewers.");
+        const reviewers = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
+        const tmpl = getTemplate("review_requested_plural");
+        await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+        return coreExports.info("Notified them on Discord.");
+    }
+    const reviewer = c.usernames.find(({ github }) => github === requestedReviewers[0]);
+    if (reviewer === undefined) {
+        return coreExports.setFailed(`Can't find ${requestedReviewers[0]} among the candidates.`);
+    }
+    const tmpl = getTemplate("review_requested_one");
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+    return coreExports.info(`Notified @${reviewer.github} on Discord.`);
+}
+async function handleSchedule(c) {
+    const repo = c.event.payload.repo;
+    const prs = await listPRs(repo.owner, repo.repo);
+    coreExports.info(`Found ${prs.length} prs matching the condition.`);
+    const minAge = Number(coreExports.getInput("remind_prs_min_age", { required: true }));
+    coreExports.info(`Exclude prs not old more than ${minAge}`);
+    const grouped = groupReviewers(prs, minAge);
+    const reviewerGithubs = Object.keys(grouped);
+    coreExports.info(`${reviewerGithubs.length} reviewer(s) will be notified.`);
+    const reviewers = c.usernames.filter(({ github }) => reviewerGithubs.includes(github));
+    if (reviewers.length !== reviewerGithubs.length) {
+        coreExports.warning(`Expected ${reviewerGithubs.length} usernames, but got ${reviewers.length}.`);
+    }
+    const lines = [];
+    for (const reviewer of reviewers) {
+        lines.push("- " +
+            idToMention(reviewer.discord) +
+            grouped[reviewer.github]
+                .map((pr) => `[${pr.title} #${pr.number}](${pr.html_url})`)
+                .join(", "));
+    }
+    const msg = getTemplate("schedule");
+    await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));
+    coreExports.info("Notified them on Discord.");
+}
+async function handleReviewSubmitted(c) {
+    const event = c.event.payload;
+    const author = c.usernames.find(({ github }) => github === event.pull_request.user.login.toLowerCase());
+    if (author === undefined) {
+        coreExports.info(`The author @${event.pull_request.user.login} is not found. Stop running.`);
+        return;
+    }
+    const tmpl = getTemplate("review_submitted");
+    notifyWithTemplate(c.webhookClient, tmpl, author, event.pull_request);
+}
+async function assignAndNotify(c, tmplKey) {
+    const event = c.event.payload;
+    const creator = event.sender.login.toLowerCase();
+    const reviewer = chooseReviewer(c.usernames, [creator]);
+    coreExports.info(`The user @${reviewer.github} is picked.`);
+    await assignReviewer(event.pull_request, reviewer);
+    coreExports.info(`Assigned @${reviewer.github} as the reviewer.`);
+    const tmpl = getTemplate(tmplKey);
+    coreExports.info(`Use the template ${tmplKey}: """${tmpl}"""`);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, event.pull_request);
+    return coreExports.info(`Notified @${reviewer.github} on Discord.`);
 }
 
 async function main() {
-    const allowOtherEvents = coreExports.getBooleanInput("allow_other_events");
-    const eventName = githubExports.context.eventName;
-    if (eventName !== "pull_request" && !allowOtherEvents) {
-        return coreExports.setFailed(`This event is ${eventName}. To allow this action to run on all events, set allow_other_events as true.`);
+    const prRouter = new ActivityTypeRouter();
+    {
+        prRouter.add("opened", handleOpened);
+        prRouter.add("reopened", handleReopenOrReadyForReview);
+        prRouter.add("ready_for_review", handleReopenOrReadyForReview);
+        prRouter.add("review_requested", handleReviewRequested);
+        prRouter.fallback(fallbackHandler);
     }
-    if (event.action === "synchronize") {
-        return coreExports.info("This action doesn't work for synchronize");
+    const reviewRouter = new ActivityTypeRouter();
+    {
+        reviewRouter.add("submitted", handleReviewSubmitted);
+        reviewRouter.fallback(fallbackHandler);
     }
-    if (!isReadyToReview() && hasReviewer()) {
-        coreExports.info("This pr is draft or already has reviewer(s).");
-        coreExports.info("no-op. Stopping.");
-        return;
+    const router = new Router();
+    {
+        router.add("pull_request", prRouter.toHandler());
+        router.add("pull_request_review", reviewRouter.toHandler());
+        router.add("schedule", handleSchedule);
+        router.fallback(fallbackHandler);
     }
+    coreExports.info("Execute router.route()");
     try {
-        const candidatesInput = coreExports.getMultilineInput("candidates");
-        const webhookURL = coreExports.getInput("webhook_url");
-        const template = coreExports.getInput("template");
-        const creator = event.sender.login.toLowerCase();
-        const usernames = parseUsernames(candidatesInput);
-        if (usernames.length === 0) {
-            coreExports.warning("No candidates. No-op.");
-            return;
-        }
-        const reviewer = selectReviewer(usernames, [creator]);
-        await assignReviewer(reviewer);
-        await sendMessage(webhookURL, template, reviewer);
+        const context = initContext();
+        await router.route(context);
     }
     catch (error) {
         if (error instanceof Error) {
-            coreExports.setFailed(error.message);
+            return coreExports.setFailed(error.message);
         }
+        coreExports.setFailed("Failed with an unknown exception.");
     }
 }
 
-/**
- * The entrypoint for the action. This file simply imports and runs the action's
- * main logic.
- */
 /* istanbul ignore next */
 main();
 //# sourceMappingURL=index.js.map
