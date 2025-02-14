@@ -30,11 +30,9 @@ export class Router<C extends IContext> {
   }
 
   async route(context: C): Promise<void> {
-    let handler: Handler<C>;
+    let handler: Handler<C> = this.fallbackHandler;
 
-    if (this.router[context.event.name] === undefined) {
-      handler = this.fallbackHandler;
-    } else {
+    if (this.router[context.event.name] !== undefined) {
       handler = this.router[context.event.name];
     }
 
@@ -64,11 +62,9 @@ export class ActivityTypeRouter<C extends IContext, T> {
   }
 
   async route(context: C): Promise<void> {
-    let handler: Handler<C>;
+    let handler = this.fallbackHandler;
 
-    if (this.router[context.event.activityType] === undefined) {
-      handler = this.fallbackHandler;
-    } else {
+    if (this.router[context.event.activityType] !== undefined) {
       handler = this.router[context.event.activityType];
     }
 
@@ -76,6 +72,6 @@ export class ActivityTypeRouter<C extends IContext, T> {
   }
 
   toHandler() {
-    return this.route;
+    return this.route.bind(this);
   }
 }
