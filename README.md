@@ -5,7 +5,9 @@
 [![CodeQL](https://github.com/JedBeom/random-reviewer-discord/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-> [!IMPORTANT] > **This action is not stable yet** and upcoming minor versions may have breaking changes.
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> **This action is not stable yet** and upcoming minor versions may have breaking changes.
 > Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.0`) instead of using `v0`.
 
 Automatically assign reviewers at random and notify them on Discord!
@@ -89,7 +91,7 @@ jobs:
 > [!IMPORTANT]
 > Don't forget to add `permissions`! This action only requires `pull-requests: write`.
 
-> [!INFO]
+> [!NOTE]
 > For more options and descriptions, see [action.yml](./action.yml).
 
 Add the file, commit it to a new branch, push it, and create a PR.
