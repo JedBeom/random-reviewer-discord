@@ -61902,7 +61902,6 @@ async function notifyWithTemplate(client, template, username, pr) {
         prURL: pr.html_url,
     });
     return client.postMessage(content);
-    // TODO: get message ID and upload to actions artifacts
 }
 
 /* istanbul ignore next */
@@ -62022,7 +62021,6 @@ function groupReviewers(pulls, minAge) {
         if (pull.draft) {
             continue;
         }
-        // TODO: compare lastNotifiedAt (when the message was sent) instead of created_at
         const createdAt = new Date(pull.created_at);
         const diffHours = (now.getTime() - createdAt.getTime()) / 1000 / 60 / 60;
         if (diffHours < minAge) {
