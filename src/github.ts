@@ -183,7 +183,6 @@ export function groupReviewers(
       continue;
     }
 
-    // TODO: compare lastNotifiedAt (when the message was sent) instead of created_at
     const createdAt = new Date(pull.created_at);
     const diffHours = (now.getTime() - createdAt.getTime()) / 1000 / 60 / 60;
     if (diffHours < minAge) {

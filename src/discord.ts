@@ -109,5 +109,4 @@ export async function notifyWithTemplate(
   });
 
   return client.postMessage(content);
-  // TODO: get message ID and upload to actions artifacts
 }
