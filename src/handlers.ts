@@ -93,12 +93,16 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     );
   }
 
-  async function notifyOne(githubUsername: string) {
+  async function notifyOne(githubUsername: string, request: boolean) {
     const username = c.usernames.find(
       ({ github }) => github === githubUsername,
     );
     if (username === undefined) {
       return core.warning(`Can't find @${githubUsername} from usernames.`);
+    }
+
+    if (request) {
+      await requestReviewer(pr, username);
     }
 
     await notifyWithTemplate({
@@ -113,7 +117,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
 
   const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
   if (requestedReviewers.length === 1) {
-    return notifyOne(requestedReviewers[0]);
+    return notifyOne(requestedReviewers[0], false);
   }
 
   if (requestedReviewers.length > 1) {
@@ -148,7 +152,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     }
 
     if (candidatesWithoutAuthor.length === 1) {
-      return notifyOne(candidatesWithoutAuthor[0]);
+      return notifyOne(candidatesWithoutAuthor[0], true);
     }
 
     const usernames = c.usernames.filter(({ github }) =>

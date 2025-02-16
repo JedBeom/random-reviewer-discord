@@ -62155,10 +62155,13 @@ async function handleReopenOrReadyForReview(c) {
     function tmplExistPlural() {
         return getTemplate(isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural");
     }
-    async function notifyOne(githubUsername) {
+    async function notifyOne(githubUsername, request) {
         const username = c.usernames.find(({ github }) => github === githubUsername);
         if (username === undefined) {
             return coreExports.warning(`Can't find @${githubUsername} from usernames.`);
+        }
+        if (request) {
+            await requestReviewer(pr, username);
         }
         await notifyWithTemplate({
             client: c.webhookClient,
@@ -62171,7 +62174,7 @@ async function handleReopenOrReadyForReview(c) {
     }
     const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
     if (requestedReviewers.length === 1) {
-        return notifyOne(requestedReviewers[0]);
+        return notifyOne(requestedReviewers[0], false);
     }
     if (requestedReviewers.length > 1) {
         const usernames = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
@@ -62196,7 +62199,7 @@ async function handleReopenOrReadyForReview(c) {
             continue;
         }
         if (candidatesWithoutAuthor.length === 1) {
-            return notifyOne(candidatesWithoutAuthor[0]);
+            return notifyOne(candidatesWithoutAuthor[0], true);
         }
         const usernames = c.usernames.filter(({ github }) => candidatesWithoutAuthor.includes(github));
         if (usernames.length === 0) {
