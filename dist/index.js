@@ -61970,11 +61970,22 @@ async function getRequestedReviewers(octokit, pr) {
     // TODO: support teams
     return data.users.map((user) => user.login.toLowerCase());
 }
+/* istanbul ignore next */
+async function getPreviousReviewers(octokit, pr) {
+    const { data: reviews } = await octokit.rest.pulls.listReviews({
+        owner: pr.base.repo.owner.login,
+        repo: pr.base.repo.name,
+        pull_number: pr.number,
+    });
+    return reviews
+        .filter((review) => !!review.user)
+        .map((review) => review.user.login.toLowerCase());
+}
 function chooseReviewer(usernames, exclude) {
-    // get candidates and exclude the creator
+    // get candidates and exclude the author
     const candidates = usernames.filter((username) => !exclude.includes(username.github));
     if (candidates.length === 0) {
-        throw new Error("No candidates after excluding the creator.");
+        throw new Error("No candidates after excluding the author.");
     }
     // randomly select the reviewer from candidates
     return candidates[Math.floor(Math.random() * candidates.length)];
@@ -61999,7 +62010,7 @@ function parseUsernames(input) {
     return candidates;
 }
 /* istanbul ignore next */
-async function assignReviewer(pr, reviewer) {
+async function requestReviewer(pr, reviewer) {
     const octokit = new Octokit();
     await octokit.rest.issues.addAssignees({
         owner: pr.base.repo.owner.login,
@@ -62120,51 +62131,102 @@ async function handleOpened(c) {
         coreExports.info(`This pr has the reviewers: ${requestedReviewers.join(", ")}. Stop running.`);
         return;
     }
-    return assignAndNotify(c, "opened");
+    const tmpl = getTemplate("opened");
+    return assignAndNotify(c, tmpl);
 }
+/// Look up three sets: requested reviewers, previous reviewers, and assignees.
+/// If there are requested reviewers(>=1), then notify them.
+/// If there are previous reviewers(>=1), choose one of them and notify them.
+/// If there are assignees(>=1), choose one of them and notify them.
+/// Else, assign on random and notify as handleOpened does.
 async function handleReopenOrReadyForReview(c) {
     const pr = c.event.payload.pull_request;
-    const isReopened = c.event.activityType === "reopened";
     if (!isReadyToReview(pr)) {
         coreExports.info("This pr is draft. No-op.");
         return;
     }
-    // Requested Reviewers do stay in place
-    // despite being drafted and being set ready for review
-    const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
-    if (requestedReviewers.length === 0) {
-        coreExports.info(`No requested reviewers. Start assigning a new reviewer.`);
-        return assignAndNotify(c, isReopened ? "reopened_assigned" : "ready_for_review_assigned");
+    const isReopened = c.event.activityType === "reopened";
+    function tmplAssigned() {
+        return getTemplate(isReopened ? "reopened_assigned" : "ready_for_review_assigned");
     }
-    if (requestedReviewers.length === 1) {
-        coreExports.info(`This pr has the reviewer: ${requestedReviewers[0]}.`);
-        const reviewer = c.usernames.find(({ github }) => github === requestedReviewers[0]);
-        if (reviewer === undefined) {
-            coreExports.setFailed(`Can't find ${requestedReviewers[0]} from the candidates.`);
-            return;
+    function tmplExistOne() {
+        return getTemplate(isReopened ? "reopened_exist_one" : "ready_for_review_exist_one");
+    }
+    function tmplExistPlural() {
+        return getTemplate(isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural");
+    }
+    async function notifyOne(githubUsername) {
+        const username = c.usernames.find(({ github }) => github === githubUsername);
+        if (username === undefined) {
+            return coreExports.warning(`Can't find @${githubUsername} from usernames.`);
         }
-        const tmpl = getTemplate(isReopened ? "reopened_exist_one" : "ready_for_review_exist_one");
         await notifyWithTemplate({
             client: c.webhookClient,
-            template: tmpl,
-            username: reviewer,
-            pr: pr,
+            template: tmplExistOne(),
+            username,
+            pr,
             showLinkPreview: c.option.showDiscordLinkPreview,
         });
-        return coreExports.info(`Notified @${reviewer.github} on Discord.`);
+        coreExports.info(`Notified @${username.github} on Discord.`);
     }
-    coreExports.info(`This pr has the reviewer(s): ${requestedReviewers.join(", ")}.`);
-    coreExports.info(`Start notifying them.`);
-    const reviewers = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
-    const tmpl = getTemplate(isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural");
-    await notifyWithTemplate({
-        client: c.webhookClient,
-        template: tmpl,
-        username: reviewers,
-        pr: pr,
-        showLinkPreview: c.option.showDiscordLinkPreview,
-    });
-    coreExports.info("Notified them on Discord.");
+    const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
+    if (requestedReviewers.length === 1) {
+        return notifyOne(requestedReviewers[0]);
+    }
+    if (requestedReviewers.length > 1) {
+        const usernames = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
+        await notifyWithTemplate({
+            client: c.webhookClient,
+            template: tmplExistPlural(),
+            username: usernames,
+            pr,
+            showLinkPreview: c.option.showDiscordLinkPreview,
+        });
+        return;
+    }
+    const candidatesSets = [
+        ["previous reviewers", await getPreviousReviewers(c.octokit, pr)],
+        ["assignees", pr.assignees.map((user) => user.login.toLowerCase())],
+    ];
+    for (const [setType, candidates] of candidatesSets) {
+        coreExports.info(`Find candidates among ${setType}.`);
+        const candidatesWithoutAuthor = candidates.filter((github) => github !== pr.user.login.toLowerCase());
+        if (candidatesWithoutAuthor.length === 0) {
+            coreExports.info(`No ${setType} after excluding the author.`);
+            continue;
+        }
+        if (candidatesWithoutAuthor.length === 1) {
+            return notifyOne(candidatesWithoutAuthor[0]);
+        }
+        const usernames = c.usernames.filter(({ github }) => candidatesWithoutAuthor.includes(github));
+        if (usernames.length === 0) {
+            coreExports.warning(`Can't find usernames of any ${setType}.`);
+            continue;
+        }
+        let reviewer;
+        try {
+            reviewer = chooseReviewer(usernames, [pr.user.login.toLowerCase()]);
+        }
+        catch {
+            coreExports.info(`No ${setType} after excluding the author.`);
+            continue;
+        }
+        coreExports.info(`Selected @${reviewer.github} from ${setType}.`);
+        await requestReviewer(pr, reviewer);
+        coreExports.info(`Requested @${reviewer.github} for a review.`);
+        await notifyWithTemplate({
+            client: c.webhookClient,
+            template: tmplAssigned(),
+            username: reviewer,
+            pr,
+            showLinkPreview: c.option.showDiscordLinkPreview,
+        });
+        coreExports.info(`Notified @${reviewer.github} on Discord.`);
+        return;
+    }
+    coreExports.info(`No proper candidates among requestedReviewers, previousReviewers, and assignees.`);
+    coreExports.info(`Start assigning on random.`);
+    return assignAndNotify(c, tmplAssigned());
 }
 async function handleReviewRequested(c) {
     const event = c.event.payload;
@@ -62259,18 +62321,16 @@ async function handleReviewSubmitted(c) {
         dataReviewer: event.review.user.login,
     });
 }
-async function assignAndNotify(c, tmplKey) {
+async function assignAndNotify(c, template) {
     const event = c.event.payload;
     const creator = event.sender.login.toLowerCase();
     const reviewer = chooseReviewer(c.usernames, [creator]);
     coreExports.info(`The user @${reviewer.github} is picked.`);
-    await assignReviewer(event.pull_request, reviewer);
+    await requestReviewer(event.pull_request, reviewer);
     coreExports.info(`Assigned @${reviewer.github} as the reviewer.`);
-    const tmpl = getTemplate(tmplKey);
-    coreExports.info(`Use the template ${tmplKey}: """${tmpl}"""`);
     await notifyWithTemplate({
         client: c.webhookClient,
-        template: tmpl,
+        template,
         username: reviewer,
         pr: event.pull_request,
         showLinkPreview: c.option.showDiscordLinkPreview,
