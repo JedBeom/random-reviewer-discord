@@ -96,7 +96,7 @@ jobs:
         with:
           usernames: ${{ secrets.USERNAMES }}
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          remind_prs_min_age: 24
+          schedule_prs_min_age: 24
 ```
 
 > [!IMPORTANT]

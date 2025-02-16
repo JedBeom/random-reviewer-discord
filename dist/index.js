@@ -62173,7 +62173,7 @@ async function handleSchedule(c) {
     const repo = c.event.payload.repo;
     const prs = await listPRs(repo.owner, repo.repo);
     coreExports.info(`Found ${prs.length} prs matching the condition.`);
-    const minAge = Number(coreExports.getInput("remind_prs_min_age", { required: true }));
+    const minAge = Number(coreExports.getInput("schedule_prs_min_age", { required: true }));
     coreExports.info(`Exclude prs not old more than ${minAge}`);
     const grouped = groupReviewers(prs, minAge);
     const reviewerGithubs = Object.keys(grouped);
@@ -62186,9 +62186,10 @@ async function handleSchedule(c) {
     for (const reviewer of reviewers) {
         lines.push("- " +
             idToMention(reviewer.discord) +
+            "\n" +
             grouped[reviewer.github]
-                .map((pr) => `[${pr.title} #${pr.number}](${pr.html_url})`)
-                .join(", "));
+                .map((pr) => `    - [${pr.title} #${pr.number}](${pr.html_url})`)
+                .join("\n"));
     }
     const msg = getTemplate("schedule");
     await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));

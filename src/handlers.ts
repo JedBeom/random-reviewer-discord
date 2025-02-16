@@ -157,7 +157,7 @@ export async function handleSchedule(c: RouterContext) {
   core.info(`Found ${prs.length} prs matching the condition.`);
 
   const minAge = Number(
-    core.getInput("remind_prs_min_age", { required: true }),
+    core.getInput("schedule_prs_min_age", { required: true }),
   );
   core.info(`Exclude prs not old more than ${minAge}`);
   const grouped = groupReviewers(prs, minAge);
@@ -179,9 +179,10 @@ export async function handleSchedule(c: RouterContext) {
     lines.push(
       "- " +
         idToMention(reviewer.discord) +
+        "\n" +
         grouped[reviewer.github]
-          .map((pr) => `[${pr.title} #${pr.number}](${pr.html_url})`)
-          .join(", "),
+          .map((pr) => `    - [${pr.title} #${pr.number}](${pr.html_url})`)
+          .join("\n"),
     );
   }
 

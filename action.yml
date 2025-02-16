@@ -13,7 +13,7 @@ inputs:
   webhook_url:
     description: Discord Webhook URL
     required: true
-  remind_prs_min_age:
+  schedule_prs_min_age:
     description: (hours) PRs which are not old by the specified amount of time are ignored when review reminding.
     required: false
     default: 24
