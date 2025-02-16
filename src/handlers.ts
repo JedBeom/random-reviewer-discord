@@ -117,10 +117,13 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
 
   const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
   if (requestedReviewers.length === 1) {
+    core.info("Found one requested reviewer.");
     return notifyOne(requestedReviewers[0], false);
   }
 
   if (requestedReviewers.length > 1) {
+    core.info(`Found ${requestedReviewers.length} requested reviewers.`);
+
     const usernames = c.usernames.filter(({ github }) =>
       requestedReviewers.includes(github),
     );
@@ -132,8 +135,10 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
       pr,
       showLinkPreview: c.option.showDiscordLinkPreview,
     });
+    core.info("Notifed them on Discord.");
     return;
   }
+  core.info("No requested reviewers.");
 
   const candidatesSets: [string, string[]][] = [
     ["previous reviewers", await getPreviousReviewers(c.octokit, pr)],
@@ -152,6 +157,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     }
 
     if (candidatesWithoutAuthor.length === 1) {
+      core.info(`Found one from ${setType}`);
       return notifyOne(candidatesWithoutAuthor[0], true);
     }
 
