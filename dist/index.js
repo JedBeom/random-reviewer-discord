@@ -61868,8 +61868,8 @@ class DiscordWebhookClient {
         }
         return result;
     }
-    async postMessage(content) {
-        const { result } = await this.client.postJson(this.webhookURL.href, { content });
+    async postMessage(content, suppressEmbeded) {
+        const { result } = await this.client.postJson(this.webhookURL.href, { content, flags: suppressEmbeded ? 4 : 0 });
         if (result === null) {
             throw new Error("Discord Webhook Message is null");
         }
@@ -61884,7 +61884,7 @@ class DiscordWebhookClient {
     }
 }
 /* istanbul ignore next */
-async function notifyWithTemplate(client, template, username, pr) {
+async function notifyWithTemplate(client, template, username, pr, showLinkPreview) {
     if (template === "") {
         template = "NO TEMPLATE WAS GIVEN!!";
     }
@@ -61901,7 +61901,7 @@ async function notifyWithTemplate(client, template, username, pr) {
         prNumber: pr.number.toString(),
         prURL: pr.html_url,
     });
-    return client.postMessage(content);
+    return client.postMessage(content, !showLinkPreview);
 }
 
 /* istanbul ignore next */
@@ -61940,11 +61940,16 @@ function initContext() {
     const webhookURL = new URL(webhookURLInput);
     const webhookClient = new DiscordWebhookClient(webhookURL);
     const octokit = new Octokit();
+    const option = {
+        schedulePrsMinAge: Number(coreExports.getInput("schedule_prs_min_age")),
+        showDiscordLinkPreview: coreExports.getBooleanInput("show_discord_link_preview"),
+    };
     return {
         event,
         usernames,
         webhookClient,
         octokit,
+        option,
     };
 }
 /* istanbul ignore next */
@@ -62135,14 +62140,14 @@ async function handleReopenOrReadyForReview(c) {
             return;
         }
         const tmpl = getTemplate(isReopened ? "reopened_exist_one" : "ready_for_review_exist_one");
-        await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+        await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr, c.option.showDiscordLinkPreview);
         return coreExports.info(`Notified @${reviewer.github} on Discord.`);
     }
     coreExports.info(`This pr has the reviewer(s): ${requestedReviewers.join(", ")}.`);
     coreExports.info(`Start notifying them.`);
     const reviewers = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
     const tmpl = getTemplate(isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural");
-    await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr, c.option.showDiscordLinkPreview);
     coreExports.info("Notified them on Discord.");
 }
 async function handleReviewRequested(c) {
@@ -62158,7 +62163,7 @@ async function handleReviewRequested(c) {
         coreExports.info("This pr has multiple reviewers.");
         const reviewers = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
         const tmpl = getTemplate("review_requested_plural");
-        await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+        await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr, c.option.showDiscordLinkPreview);
         return coreExports.info("Notified them on Discord.");
     }
     const reviewer = c.usernames.find(({ github }) => github === requestedReviewers[0]);
@@ -62166,16 +62171,15 @@ async function handleReviewRequested(c) {
         return coreExports.setFailed(`Can't find ${requestedReviewers[0]} among the candidates.`);
     }
     const tmpl = getTemplate("review_requested_one");
-    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr, c.option.showDiscordLinkPreview);
     return coreExports.info(`Notified @${reviewer.github} on Discord.`);
 }
 async function handleSchedule(c) {
     const repo = c.event.payload.repo;
     const prs = await listPRs(repo.owner, repo.repo);
     coreExports.info(`Found ${prs.length} prs matching the condition.`);
-    const minAge = Number(coreExports.getInput("schedule_prs_min_age", { required: true }));
-    coreExports.info(`Exclude prs not old more than ${minAge}`);
-    const grouped = groupReviewers(prs, minAge);
+    coreExports.info(`Exclude prs not old more than ${c.option.schedulePrsMinAge}`);
+    const grouped = groupReviewers(prs, c.option.schedulePrsMinAge);
     const reviewerGithubs = Object.keys(grouped);
     coreExports.info(`${reviewerGithubs.length} reviewer(s) will be notified.`);
     const reviewers = c.usernames.filter(({ github }) => reviewerGithubs.includes(github));
@@ -62192,7 +62196,7 @@ async function handleSchedule(c) {
                 .join("\n"));
     }
     const msg = getTemplate("schedule");
-    await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));
+    await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"), !c.option.showDiscordLinkPreview);
     coreExports.info("Notified them on Discord.");
 }
 async function handleReviewSubmitted(c) {
@@ -62203,7 +62207,7 @@ async function handleReviewSubmitted(c) {
         return;
     }
     const tmpl = getTemplate("review_submitted");
-    notifyWithTemplate(c.webhookClient, tmpl, author, event.pull_request);
+    notifyWithTemplate(c.webhookClient, tmpl, author, event.pull_request, c.option.showDiscordLinkPreview);
 }
 async function assignAndNotify(c, tmplKey) {
     const event = c.event.payload;
@@ -62214,7 +62218,7 @@ async function assignAndNotify(c, tmplKey) {
     coreExports.info(`Assigned @${reviewer.github} as the reviewer.`);
     const tmpl = getTemplate(tmplKey);
     coreExports.info(`Use the template ${tmplKey}: """${tmpl}"""`);
-    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, event.pull_request);
+    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, event.pull_request, c.option.showDiscordLinkPreview);
     return coreExports.info(`Notified @${reviewer.github} on Discord.`);
 }
 

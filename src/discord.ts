@@ -54,10 +54,13 @@ export class DiscordWebhookClient {
     return result;
   }
 
-  async postMessage(content: string): Promise<IDiscordWebhookMessage> {
+  async postMessage(
+    content: string,
+    suppressEmbeded: boolean,
+  ): Promise<IDiscordWebhookMessage> {
     const { result } = await this.client.postJson<IDiscordWebhookMessage>(
       this.webhookURL.href,
-      { content },
+      { content, flags: suppressEmbeded ? 4 : 0 },
     );
 
     if (result === null) {
@@ -87,6 +90,7 @@ export async function notifyWithTemplate(
   template: string,
   username: Username | Username[],
   pr: PullRequest,
+  showLinkPreview: boolean,
 ) {
   if (template === "") {
     template = "NO TEMPLATE WAS GIVEN!!";
@@ -106,5 +110,5 @@ export async function notifyWithTemplate(
     prURL: pr.html_url,
   });
 
-  return client.postMessage(content);
+  return client.postMessage(content, !showLinkPreview);
 }

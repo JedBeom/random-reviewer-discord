@@ -11,6 +11,7 @@ import type {
   RouterContext,
   ScheduleEvent,
   TemplateKey,
+  Option,
 } from "@/types";
 import { DiscordWebhookClient } from "@/discord";
 
@@ -58,11 +59,17 @@ export function initContext(): RouterContext {
 
   const octokit = new Octokit();
 
+  const option: Option = {
+    schedulePrsMinAge: Number(core.getInput("schedule_prs_min_age")),
+    showDiscordLinkPreview: core.getBooleanInput("show_discord_link_preview"),
+  };
+
   return {
     event,
     usernames,
     webhookClient,
     octokit,
+    option,
   };
 }
 

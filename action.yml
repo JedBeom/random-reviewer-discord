@@ -17,6 +17,10 @@ inputs:
     description: (hours) PRs which are not old by the specified amount of time are ignored when review reminding.
     required: false
     default: 24
+  show_discord_link_previews:
+    description: Show link previews in Discord messages.
+    required: false
+    default: false
   template_opened:
     description: Message template used when a PR is opened.
     required: false

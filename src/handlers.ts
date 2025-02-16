@@ -94,7 +94,13 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     const tmpl = getTemplate(
       isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
     );
-    await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+    await notifyWithTemplate(
+      c.webhookClient,
+      tmpl,
+      reviewer,
+      pr,
+      c.option.showDiscordLinkPreview,
+    );
     return core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
@@ -108,7 +114,13 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural",
   );
 
-  await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+  await notifyWithTemplate(
+    c.webhookClient,
+    tmpl,
+    reviewers,
+    pr,
+    c.option.showDiscordLinkPreview,
+  );
   core.info("Notified them on Discord.");
 }
 
@@ -133,7 +145,13 @@ export async function handleReviewRequested(c: RouterContext) {
     );
 
     const tmpl = getTemplate("review_requested_plural");
-    await notifyWithTemplate(c.webhookClient, tmpl, reviewers, pr);
+    await notifyWithTemplate(
+      c.webhookClient,
+      tmpl,
+      reviewers,
+      pr,
+      c.option.showDiscordLinkPreview,
+    );
     return core.info("Notified them on Discord.");
   }
 
@@ -147,20 +165,24 @@ export async function handleReviewRequested(c: RouterContext) {
   }
 
   const tmpl = getTemplate("review_requested_one");
-  await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
+  await notifyWithTemplate(
+    c.webhookClient,
+    tmpl,
+    reviewer,
+    pr,
+    c.option.showDiscordLinkPreview,
+  );
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
 export async function handleSchedule(c: RouterContext) {
   const repo = (c.event.payload as ScheduleEvent).repo;
+
   const prs = await listPRs(repo.owner, repo.repo);
   core.info(`Found ${prs.length} prs matching the condition.`);
 
-  const minAge = Number(
-    core.getInput("schedule_prs_min_age", { required: true }),
-  );
-  core.info(`Exclude prs not old more than ${minAge}`);
-  const grouped = groupReviewers(prs, minAge);
+  core.info(`Exclude prs not old more than ${c.option.schedulePrsMinAge}`);
+  const grouped = groupReviewers(prs, c.option.schedulePrsMinAge);
   const reviewerGithubs = Object.keys(grouped);
   core.info(`${reviewerGithubs.length} reviewer(s) will be notified.`);
 
@@ -188,7 +210,10 @@ export async function handleSchedule(c: RouterContext) {
 
   const msg = getTemplate("schedule");
 
-  await c.webhookClient.postMessage(msg + "\n\n" + lines.join("\n"));
+  await c.webhookClient.postMessage(
+    msg + "\n\n" + lines.join("\n"),
+    !c.option.showDiscordLinkPreview,
+  );
   core.info("Notified them on Discord.");
 }
 
@@ -211,6 +236,7 @@ export async function handleReviewSubmitted(c: RouterContext) {
     tmpl,
     author,
     event.pull_request as PullRequest,
+    c.option.showDiscordLinkPreview,
   );
 }
 
@@ -227,6 +253,12 @@ export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const tmpl = getTemplate(tmplKey);
   core.info(`Use the template ${tmplKey}: """${tmpl}"""`);
 
-  await notifyWithTemplate(c.webhookClient, tmpl, reviewer, event.pull_request);
+  await notifyWithTemplate(
+    c.webhookClient,
+    tmpl,
+    reviewer,
+    event.pull_request,
+    c.option.showDiscordLinkPreview,
+  );
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }

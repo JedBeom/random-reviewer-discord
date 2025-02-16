@@ -86,11 +86,17 @@ export type ActionEvent = {
   payload: WebhookPayload | ScheduleEvent;
 };
 
+export type Option = {
+  schedulePrsMinAge: number;
+  showDiscordLinkPreview: boolean;
+};
+
 export type RouterContext = {
   event: ActionEvent;
   usernames: Username[];
   webhookClient: DiscordWebhookClient;
   octokit: Octokit;
+  option: Option;
 };
 
 export type TemplateKey =
