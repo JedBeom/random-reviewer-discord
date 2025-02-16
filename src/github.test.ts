@@ -98,7 +98,7 @@ describe("chooseReviewer", () => {
 
   test("Zero candidates throws an error", () => {
     expect(() => chooseReviewer([user1], [user1.github])).toThrow(
-      new Error("No candidates after excluding the creator."),
+      new Error("No candidates after excluding the author."),
     );
   });
 });
