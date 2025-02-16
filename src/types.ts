@@ -16,6 +16,8 @@ export type TemplateData = {
   prTitle: string;
   prNumber: string;
   prURL: string;
+  sender?: string;
+  reviewer?: string;
 };
 
 // https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows
@@ -114,4 +116,6 @@ export type TemplateKey =
   | "converted_to_draft"
   | "review_request_removed"
   | "schedule"
-  | "review_submitted";
+  | "review_submitted_commented"
+  | "review_submitted_changes_requested"
+  | "review_submitted_approved";

@@ -145,11 +145,24 @@ See [action.yml](./action.yml) for the list of templates and examples.
 
 Each templates except `template_schedule` supports the following variables:
 
-- `{mention}`: Mention of the reviewer(s). For `pull_request_review.submitted`, this is the mention of the author.
-  - Example: `<@1111111111111111111>` or `<@1111111111111111111> <@2222222222222222222>`
+- `{mention}`: Mention of the notification target. Mostly it is the reviewer(s). For `template_review_submitted_*`, this is the mention of the author.
+  - e.g. `<@1111111111111111111>` or `<@1111111111111111111> <@2222222222222222222>`
 - `{prTitle}`: The title of the pull request.
-  - Example: `Remove unused dependencies`
+  - e.g. `Remove unused dependencies`
 - `{prNumber}`: Number uniquely identifying the pull request within its repository.
-  - Example: `314`
+  - e.g. `314`
 - `{prURL}`: URL of the pull request.
-  - Example: `https://github.com/JedBeom/random-reviewer-discord/pull/9`
+  - e.g. `https://github.com/JedBeom/random-reviewer-discord/pull/9`
+
+Some templates support additional variables:
+
+- `{sender}`: A GitHub username of the user who requested the review.
+  - supported templates:
+    - `template_review_requested_one`
+    - `template_review_requested_plural`
+  - e.g. `JedBeom`
+- `{reviewer}`: A GitHub username of the reviewer.
+  - supported templates:
+    - `template_review_submitted_commented`
+    - `template_review_submitted_changes_requested`
+    - `template_review_submitted_approved`

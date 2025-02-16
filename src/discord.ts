@@ -7,7 +7,7 @@ export function formatString(template: string, data: TemplateData): string {
   for (const key in data) {
     template = template.replaceAll(
       new RegExp(`{ *${key} *}`, "g"),
-      data[key as keyof TemplateData],
+      data[key as keyof TemplateData] || key,
     );
   }
 
@@ -84,14 +84,26 @@ export class DiscordWebhookClient {
   }
 }
 
+interface notifyWithTemplateProp {
+  client: DiscordWebhookClient;
+  template: string;
+  username: Username | Username[];
+  pr: PullRequest;
+  showLinkPreview: boolean;
+  dataSender?: string;
+  dataReviewer?: string;
+}
+
 /* istanbul ignore next */
-export async function notifyWithTemplate(
-  client: DiscordWebhookClient,
-  template: string,
-  username: Username | Username[],
-  pr: PullRequest,
-  showLinkPreview: boolean,
-) {
+export async function notifyWithTemplate({
+  client,
+  template,
+  username,
+  pr,
+  showLinkPreview,
+  dataSender,
+  dataReviewer,
+}: notifyWithTemplateProp) {
   if (template === "") {
     template = "NO TEMPLATE WAS GIVEN!!";
   }
@@ -108,6 +120,8 @@ export async function notifyWithTemplate(
     prTitle: pr.title,
     prNumber: pr.number.toString(),
     prURL: pr.html_url,
+    sender: dataSender,
+    reviewer: dataReviewer,
   });
 
   return client.postMessage(content, !showLinkPreview);

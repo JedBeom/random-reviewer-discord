@@ -94,13 +94,13 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     const tmpl = getTemplate(
       isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
     );
-    await notifyWithTemplate(
-      c.webhookClient,
-      tmpl,
-      reviewer,
-      pr,
-      c.option.showDiscordLinkPreview,
-    );
+    await notifyWithTemplate({
+      client: c.webhookClient,
+      template: tmpl,
+      username: reviewer,
+      pr: pr,
+      showLinkPreview: c.option.showDiscordLinkPreview,
+    });
     return core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
@@ -114,41 +114,44 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
     isReopened ? "reopened_exist_plural" : "ready_for_review_exist_plural",
   );
 
-  await notifyWithTemplate(
-    c.webhookClient,
-    tmpl,
-    reviewers,
-    pr,
-    c.option.showDiscordLinkPreview,
-  );
+  await notifyWithTemplate({
+    client: c.webhookClient,
+    template: tmpl,
+    username: reviewers,
+    pr: pr,
+    showLinkPreview: c.option.showDiscordLinkPreview,
+  });
   core.info("Notified them on Discord.");
 }
 
 export async function handleReviewRequested(c: RouterContext) {
-  const pr = (c.event.payload! as PullRequestReviewRequestedEvent).pull_request;
+  const event = c.event.payload! as PullRequestReviewRequestedEvent;
 
-  if (pr.state === "closed" && !c.option.notifyReviewRequestedOnClosed) {
+  if (
+    event.pull_request.state === "closed" &&
+    !c.option.notifyReviewRequestedOnClosed
+  ) {
     core.info(
       "This PR is closed and notify_review_requested_on_closed is false.",
     );
     return;
   }
 
-  if (pr.draft && !c.option.notifyReviewRequestedOnDraft) {
+  if (event.pull_request.draft && !c.option.notifyReviewRequestedOnDraft) {
     core.info(
       "This PR is draft and notify_review_requested_on_draft is false.",
     );
     return;
   }
 
-  if (pr.requested_reviewers.length === 0) {
+  if (event.pull_request.requested_reviewers.length === 0) {
     return core.error(
       "No requested reviewers although the event is review_requested.",
     );
   }
 
   // TODO: support teams as reviewers
-  const requestedReviewers = pr.requested_reviewers
+  const requestedReviewers = event.pull_request.requested_reviewers
     .filter((reviewer) => "login" in reviewer)
     .map((user) => user.login.toLowerCase());
 
@@ -159,13 +162,14 @@ export async function handleReviewRequested(c: RouterContext) {
     );
 
     const tmpl = getTemplate("review_requested_plural");
-    await notifyWithTemplate(
-      c.webhookClient,
-      tmpl,
-      reviewers,
-      pr,
-      c.option.showDiscordLinkPreview,
-    );
+    await notifyWithTemplate({
+      client: c.webhookClient,
+      template: tmpl,
+      username: reviewers,
+      pr: event.pull_request,
+      showLinkPreview: c.option.showDiscordLinkPreview,
+      dataSender: event.sender.login,
+    });
     return core.info("Notified them on Discord.");
   }
 
@@ -179,13 +183,14 @@ export async function handleReviewRequested(c: RouterContext) {
   }
 
   const tmpl = getTemplate("review_requested_one");
-  await notifyWithTemplate(
-    c.webhookClient,
-    tmpl,
-    reviewer,
-    pr,
-    c.option.showDiscordLinkPreview,
-  );
+  await notifyWithTemplate({
+    client: c.webhookClient,
+    template: tmpl,
+    username: reviewer,
+    pr: event.pull_request,
+    showLinkPreview: c.option.showDiscordLinkPreview,
+    dataSender: event.sender.login,
+  });
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
 
@@ -244,14 +249,22 @@ export async function handleReviewSubmitted(c: RouterContext) {
     return;
   }
 
-  const tmpl = getTemplate("review_submitted");
-  notifyWithTemplate(
-    c.webhookClient,
-    tmpl,
-    author,
-    event.pull_request as PullRequest,
-    c.option.showDiscordLinkPreview,
+  if (event.review.state === "dismissed") {
+    core.info("The review was dismissed and not considered as an event.");
+    return;
+  }
+
+  const tmpl = getTemplate(
+    ("review_submitted_" + event.review.state) as TemplateKey,
   );
+  await notifyWithTemplate({
+    client: c.webhookClient,
+    template: tmpl,
+    username: author,
+    pr: event.pull_request as PullRequest,
+    showLinkPreview: c.option.showDiscordLinkPreview,
+    dataReviewer: event.review.user.login,
+  });
 }
 
 export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
@@ -267,12 +280,12 @@ export async function assignAndNotify(c: RouterContext, tmplKey: TemplateKey) {
   const tmpl = getTemplate(tmplKey);
   core.info(`Use the template ${tmplKey}: """${tmpl}"""`);
 
-  await notifyWithTemplate(
-    c.webhookClient,
-    tmpl,
-    reviewer,
-    event.pull_request,
-    c.option.showDiscordLinkPreview,
-  );
+  await notifyWithTemplate({
+    client: c.webhookClient,
+    template: tmpl,
+    username: reviewer,
+    pr: event.pull_request,
+    showLinkPreview: c.option.showDiscordLinkPreview,
+  });
   return core.info(`Notified @${reviewer.github} on Discord.`);
 }
