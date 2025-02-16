@@ -243,7 +243,7 @@ export async function handleReviewRequested(c: RouterContext) {
     ({ github }) => github === requestedReviewers[0],
   );
   if (reviewer === undefined) {
-    return core.setFailed(
+    return core.warning(
       `Can't find ${requestedReviewers[0]} among the candidates.`,
     );
   }
