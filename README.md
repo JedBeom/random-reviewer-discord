@@ -16,7 +16,7 @@ Automatically assign reviewers at random and notify them on Discord!
 - [Customize It](#customize-it)
   - [Supported Events and Activity Types](#supported-events-and-activity-types)
   - [Exclude Some Usernames](#exclude-some-usernames)
-  - [Edit the Message](#edit-the-message)
+  - [Edit the Message Templates](#edit-the-message-templates)
 
 ## How to Install on Your Repository
 
@@ -37,6 +37,11 @@ Automatically assign reviewers at random and notify them on Discord!
 > [!WARNING]
 > You can skip this step and add these values directly in the `.yaml` file,
 > but exposing Discord user IDs and the webhook URL is NEVER a good idea.
+
+You need two secrets:
+
+- `WEBHOOK_URL`
+- `USERNAMES`
 
 1. On your GitHub repository page, go to **Settings** and click **Secrets and variables > Actions**.
    ![github secrets](docs/github-secrets.png)
@@ -89,23 +94,23 @@ jobs:
   assign-reviewer:
     runs-on: ubuntu-latest
     steps:
-      - name: Assign random reviewer
+      - name: Run random-reviewer-discord
         uses: JedBeom/random-reviewer-discord@v0.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           usernames: ${{ secrets.USERNAMES }}
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          schedule_prs_min_age: 24
 ```
 
 > [!IMPORTANT]
-> Don't forget to add `permissions`! This action only requires `pull-requests: write`.
+> Don't forget to add `permissions`! This action requires `pull-requests: write`.
 
 > [!NOTE]
-> For more options and descriptions, see [action.yml](./action.yml).
+> To copy the file with full options: see [example.yml](./example.yml).
+> For default values and descriptions, see [action.yml](./action.yml).
 
-Add the file, commit it to a new branch, push it, and create a PR.
+Add(Stage) the file, commit it to a new branch, push it, and create a PR.
 
 ## Customize It
 
@@ -113,16 +118,16 @@ Add the file, commit it to a new branch, push it, and create a PR.
 
 This action supports the following events:
 
-- [pull_request](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request))
-  - opened
-  - reopened
-  - ready_for_review
-  - review_requested
-- [pull_requested](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_review) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review))
-  - submitted
-- [schedule](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule)
+- [`pull_request`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request))
+  - `opened`: Assign the reviewer on random if no reviewers were assigned.
+  - `reopened`: Notify the requested reviewers if present. Otherwise, assign on random among the previous reviewers or the assignees.
+  - `ready_for_review`: (same as `reopened`)
+  - `review_requested`: Notify the requested reviewer(s). Requesting on the closed/draft PRs would not fire the alert by default.
+- [`pull_request_review`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_review) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review))
+  - `submitted`: Notify the author when the review was submitted.
+- [`schedule`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule): Remind reviewers who were requested reviews but haven't done yet.
 
-Other types would be ignored.
+Other event types would be ignored with an error.
 
 ### Exclude Some Usernames
 
@@ -138,7 +143,7 @@ user3:3333333333333333333
 
 adding `#` in front of `user2`'s line makes the action ignore them. Remove `#` if you want to include them again.
 
-### Edit the Message
+### Edit the Message Templates
 
 You can customize the Discord message using the `template_*` inputs.
 See [action.yml](./action.yml) for the list of templates and examples.

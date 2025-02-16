@@ -33,7 +33,8 @@ inputs:
     description: Message template used when a PR is opened.
     required: false
     default: >-
-      🎉 {mention} was selected as a reviewer for [{prTitle} #{prNumber}]({prURL})
+      🎉 {mention} was selected as a reviewer for
+      [{prTitle} #{prNumber}]({prURL})
   template_reopened_assigned:
     description: >-
       Message template used when a PR is reopened
