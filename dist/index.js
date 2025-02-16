@@ -62237,6 +62237,12 @@ async function main() {
         router.add("pull_request_review", reviewRouter.toHandler());
         router.add("schedule", handleSchedule);
         router.fallback(fallbackHandler);
+        router.use((next) => {
+            return async (c) => {
+                coreExports.info(`event.activityType: ${c.event.name}.${c.event.activityType}`);
+                next(c);
+            };
+        });
     }
     coreExports.info("Execute router.route()");
     try {

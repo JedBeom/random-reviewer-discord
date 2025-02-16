@@ -44,6 +44,14 @@ export async function main() {
     router.add("pull_request_review", reviewRouter.toHandler());
     router.add("schedule", handleSchedule);
     router.fallback(fallbackHandler);
+    router.use((next) => {
+      return async (c: RouterContext) => {
+        core.info(
+          `event.activityType: ${c.event.name}.${c.event.activityType}`,
+        );
+        next(c);
+      };
+    });
   }
 
   core.info("Execute router.route()");
