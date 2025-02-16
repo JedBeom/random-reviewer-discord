@@ -61919,9 +61919,13 @@ function getActionEvent() {
     if (name === "schedule") {
         payload = createScheduleEvent();
     }
+    let activityType = "";
+    if (githubExports.context.payload.action !== undefined) {
+        activityType = githubExports.context.payload.action;
+    }
     return {
         name: githubExports.context.eventName,
-        activityType: githubExports.context.action,
+        activityType: activityType,
         payload,
     };
 }

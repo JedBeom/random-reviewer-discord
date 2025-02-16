@@ -30,10 +30,14 @@ export function getActionEvent(): ActionEvent {
   if (name === "schedule") {
     payload = createScheduleEvent();
   }
+  let activityType = "";
+  if (githubContext.payload.action !== undefined) {
+    activityType = githubContext.payload.action;
+  }
 
   return {
     name: githubContext.eventName as ActionEventName,
-    activityType: githubContext.action as ActivityType,
+    activityType: activityType as ActivityType,
     payload,
   };
 }
