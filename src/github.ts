@@ -119,13 +119,13 @@ export function chooseReviewer(
   usernames: Username[],
   exclude: string[],
 ): Username {
-  // get candidates and exclude the creator
+  // get candidates and exclude the author
   const candidates = usernames.filter(
     (username) => !exclude.includes(username.github),
   );
 
   if (candidates.length === 0) {
-    throw new Error("No candidates after excluding the creator.");
+    throw new Error("No candidates after excluding the author.");
   }
 
   // randomly select the reviewer from candidates
@@ -155,7 +155,7 @@ export function parseUsernames(input: string[]): Username[] {
 }
 
 /* istanbul ignore next */
-export async function assignReviewer(pr: PullRequest, reviewer: Username) {
+export async function requestReviewer(pr: PullRequest, reviewer: Username) {
   const octokit = new Octokit();
 
   await octokit.rest.issues.addAssignees({
