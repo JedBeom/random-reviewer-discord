@@ -49,7 +49,7 @@ export async function main() {
         core.info(
           `event.activityType: ${c.event.name}.${c.event.activityType}`,
         );
-        next(c);
+        return next(c);
       };
     });
   }

@@ -62240,7 +62240,7 @@ async function main() {
         router.use((next) => {
             return async (c) => {
                 coreExports.info(`event.activityType: ${c.event.name}.${c.event.activityType}`);
-                next(c);
+                return next(c);
             };
         });
     }
