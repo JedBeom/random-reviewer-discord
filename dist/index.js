@@ -61943,6 +61943,8 @@ function initContext() {
     const option = {
         schedulePrsMinAge: Number(coreExports.getInput("schedule_prs_min_age")),
         showDiscordLinkPreview: coreExports.getBooleanInput("show_discord_link_preview"),
+        notifyReviewRequestedOnClosed: coreExports.getBooleanInput("notify_review_requested_on_closed"),
+        notifyReviewRequestedOnDraft: coreExports.getBooleanInput("notify_review_requested_on_draft"),
     };
     return {
         event,
@@ -62152,6 +62154,14 @@ async function handleReopenOrReadyForReview(c) {
 }
 async function handleReviewRequested(c) {
     const pr = c.event.payload.pull_request;
+    if (pr.state === "closed" && !c.option.notifyReviewRequestedOnClosed) {
+        coreExports.info("This PR is closed and notify_review_requested_on_closed is false.");
+        return;
+    }
+    if (pr.draft && !c.option.notifyReviewRequestedOnDraft) {
+        coreExports.info("This PR is draft and notify_review_requested_on_draft is false.");
+        return;
+    }
     if (pr.requested_reviewers.length === 0) {
         return coreExports.error("No requested reviewers although the event is review_requested.");
     }

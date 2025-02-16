@@ -89,6 +89,8 @@ export type ActionEvent = {
 export type Option = {
   schedulePrsMinAge: number;
   showDiscordLinkPreview: boolean;
+  notifyReviewRequestedOnClosed: boolean;
+  notifyReviewRequestedOnDraft: boolean;
 };
 
 export type RouterContext = {

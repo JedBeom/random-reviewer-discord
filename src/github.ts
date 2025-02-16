@@ -62,6 +62,12 @@ export function initContext(): RouterContext {
   const option: Option = {
     schedulePrsMinAge: Number(core.getInput("schedule_prs_min_age")),
     showDiscordLinkPreview: core.getBooleanInput("show_discord_link_preview"),
+    notifyReviewRequestedOnClosed: core.getBooleanInput(
+      "notify_review_requested_on_closed",
+    ),
+    notifyReviewRequestedOnDraft: core.getBooleanInput(
+      "notify_review_requested_on_draft",
+    ),
   };
 
   return {

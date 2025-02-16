@@ -21,6 +21,14 @@ inputs:
     description: Show link previews in Discord messages.
     required: false
     default: false
+  notify_review_requested_on_closed:
+    description: Notify requested reviewers for closed PRs
+    required: false
+    default: false
+  notify_review_requested_on_draft:
+    description: Notify requested reviewers for draft PRs
+    required: false
+    default: false
   template_opened:
     description: Message template used when a PR is opened.
     required: false

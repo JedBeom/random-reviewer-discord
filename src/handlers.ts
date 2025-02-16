@@ -127,6 +127,20 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
 export async function handleReviewRequested(c: RouterContext) {
   const pr = (c.event.payload! as PullRequestReviewRequestedEvent).pull_request;
 
+  if (pr.state === "closed" && !c.option.notifyReviewRequestedOnClosed) {
+    core.info(
+      "This PR is closed and notify_review_requested_on_closed is false.",
+    );
+    return;
+  }
+
+  if (pr.draft && !c.option.notifyReviewRequestedOnDraft) {
+    core.info(
+      "This PR is draft and notify_review_requested_on_draft is false.",
+    );
+    return;
+  }
+
   if (pr.requested_reviewers.length === 0) {
     return core.error(
       "No requested reviewers although the event is review_requested.",
