@@ -62262,7 +62262,7 @@ async function handleReviewRequested(c) {
     }
     const reviewer = c.usernames.find(({ github }) => github === requestedReviewers[0]);
     if (reviewer === undefined) {
-        return coreExports.setFailed(`Can't find ${requestedReviewers[0]} among the candidates.`);
+        return coreExports.warning(`Can't find ${requestedReviewers[0]} among the candidates.`);
     }
     const tmpl = getTemplate("review_requested_one");
     await notifyWithTemplate({
