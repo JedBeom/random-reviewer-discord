@@ -95,7 +95,7 @@ export async function handleReopenOrReadyForReview(c: RouterContext) {
       isReopened ? "reopened_exist_one" : "ready_for_review_exist_one",
     );
     await notifyWithTemplate(c.webhookClient, tmpl, reviewer, pr);
-    core.info(`Notified @${reviewer.github} on Discord.`);
+    return core.info(`Notified @${reviewer.github} on Discord.`);
   }
 
   core.info(`This pr has the reviewer(s): ${requestedReviewers.join(", ")}.`);
