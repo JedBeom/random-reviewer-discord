@@ -65,7 +65,7 @@ and so on. To find a Discord User ID, follow [this official document](https://su
 <!-- prettier-ignore -->
 > [!IMPORTANT] 
 > **This action is not stable yet** and upcoming minor versions may have breaking changes.
-> Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.0`) instead of using `v0`.
+> Specify the full version (e.g., `JedBeom/random-reviewer-discord@v0.2.1`) instead of using `v0`.
 
 Create a file `.github/workflows/random-reviewer.yaml` and paste the following:
 
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run random-reviewer-discord
-        uses: JedBeom/random-reviewer-discord@v0.2.0
+        uses: JedBeom/random-reviewer-discord@v0.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -127,7 +127,7 @@ This action supports the following events:
 - [`pull_request_review`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_review) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review))
   - `submitted`: Notify the author when the review was submitted.
 - [`schedule`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule): Remind reviewers who were requested reviews but haven't done yet.
-- [`workflow_dispatch`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#workflow_dispatch): Do the same tasks as `schedule`. Share options(inputs) with `schedule`.
+- [`workflow_dispatch`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#workflow_dispatch): Do the same tasks as `schedule`. Share options(inputs) with `schedule`. See [GitHub Rest Documentation](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event) to trigger the action manually.
 
 Other event types would be ignored with an error.
 
