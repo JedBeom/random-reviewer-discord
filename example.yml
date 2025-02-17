@@ -30,10 +30,10 @@ jobs:
         with:
           usernames: ${{ secrets.USERNAMES }}
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          schedule_prs_min_age: 24
-          show_discord_link_preview: false
-          notify_review_requested_on_closed: false
-          notify_review_requested_on_draft: false
+          # schedule_prs_min_age: 24
+          # show_discord_link_preview: false
+          # notify_review_requested_on_closed: false
+          # notify_review_requested_on_draft: false
           # template_opened: >-
           # template_reopened_assigned: >-
           # template_reopened_exist_one: >-
