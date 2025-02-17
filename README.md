@@ -86,6 +86,7 @@ on:
       - submitted
   schedule:
     - cron: 0 10 * * 6
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
