@@ -62288,7 +62288,14 @@ async function handleReviewRequested(c) {
 }
 async function handleSchedule(c) {
     const repo = c.event.payload.repo;
-    const prs = await listPRs(repo.owner, repo.repo);
+    return listAndRemind(c, repo.owner, repo.repo);
+}
+async function handleWorkflowDispatch(c) {
+    const repo = c.event.payload.repository;
+    return listAndRemind(c, repo.owner.login, repo.name);
+}
+async function listAndRemind(c, repoOwner, repoName) {
+    const prs = await listPRs(repoOwner, repoName);
     coreExports.info(`Found ${prs.length} prs matching the condition.`);
     coreExports.info(`Exclude prs not old more than ${c.option.schedulePrsMinAge}`);
     const grouped = groupReviewers(prs, c.option.schedulePrsMinAge);
@@ -62368,6 +62375,7 @@ async function main() {
         router.add("pull_request", prRouter.toHandler());
         router.add("pull_request_review", reviewRouter.toHandler());
         router.add("schedule", handleSchedule);
+        router.add("workflow_dispatch", handleWorkflowDispatch);
         router.fallback(fallbackHandler);
         router.use((next) => {
             return async (c) => {

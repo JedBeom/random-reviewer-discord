@@ -14,6 +14,7 @@ import {
   handleReviewRequested,
   handleReviewSubmitted,
   handleSchedule,
+  handleWorkflowDispatch,
 } from "@/handlers";
 
 export async function main() {
@@ -43,6 +44,7 @@ export async function main() {
     router.add("pull_request", prRouter.toHandler());
     router.add("pull_request_review", reviewRouter.toHandler());
     router.add("schedule", handleSchedule);
+    router.add("workflow_dispatch", handleWorkflowDispatch);
     router.fallback(fallbackHandler);
     router.use((next) => {
       return async (c: RouterContext) => {

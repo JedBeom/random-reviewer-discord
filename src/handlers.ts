@@ -7,6 +7,7 @@ import type {
   PullRequestReopenedEvent,
   PullRequestReviewRequestedEvent,
   PullRequestReviewSubmittedEvent,
+  WorkflowDispatchEvent,
 } from "@octokit/webhooks-types";
 
 import type {
@@ -272,8 +273,20 @@ export async function handleReviewRequested(c: RouterContext) {
 
 export async function handleSchedule(c: RouterContext) {
   const repo = (c.event.payload as ScheduleEvent).repo;
+  return listAndRemind(c, repo.owner, repo.repo);
+}
 
-  const prs = await listPRs(repo.owner, repo.repo);
+export async function handleWorkflowDispatch(c: RouterContext) {
+  const repo = (c.event.payload as WorkflowDispatchEvent).repository;
+  return listAndRemind(c, repo.owner.login, repo.name);
+}
+
+async function listAndRemind(
+  c: RouterContext,
+  repoOwner: string,
+  repoName: string,
+) {
+  const prs = await listPRs(repoOwner, repoName);
   core.info(`Found ${prs.length} prs matching the condition.`);
 
   core.info(`Exclude prs not old more than ${c.option.schedulePrsMinAge}`);
