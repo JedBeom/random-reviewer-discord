@@ -30,45 +30,20 @@ jobs:
         with:
           usernames: ${{ secrets.USERNAMES }}
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          schedule_prs_min_age: 24
-          show_discord_link_preview: false
-          notify_review_requested_on_closed: false
-          notify_review_requested_on_draft: false
-          template_opened: >-
-            🎉 {mention} was selected as a reviewer for 
-            [{prTitle} #{prNumber}]({prURL})
-          template_reopened_assigned: >-
-            🎉 {mention} was selected as a reviewer for 
-            [{prTitle} #{prNumber} (reopened)]({prURL})
-          template_reopened_exist_one: >-
-            ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-            was reopened and waiting your review.
-          template_reopened_exist_plural: >-
-            ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-            was reopened and waiting your review.
-          template_ready_for_review_assigned: >-
-            🎉 {mention} was selected as a reviewer for
-            [{prTitle} #{prNumber} (ready for review)]({prURL})
-          template_ready_for_review_exist_one: >-
-            ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-            is now ready for review and waiting your review.
-          template_ready_for_review_exist_plural: >-
-            ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-            is now ready for review and waiting your review.
-          template_review_requested_one: >-
-            🔄 {mention} was requested a review by {sender} for
-            [{prTitle} #{prNumber}]({prURL}).
-          template_review_requested_plural: >-
-            🔄 {mention}, you were requested a review by {sender} for
-            [{prTitle} #{prNumber}]({prURL}).
-          template_schedule: >-
-            🔔 Good afternoon! These PRs are waiting for your reviews!
-          template_review_submitted_commented: >-
-            ✉️ {mention}, your PR has got a feedback from {reviewer}!
-            [{prTitle} #{prNumber}]({prURL})
-          template_review_submitted_changes_requested: >-
-            ✉️ {mention}, {reviewer} requested changes on
-            [{prTitle} #{prNumber}]({prURL}).
-          template_review_submitted_approved: >-
-            ✉️ {mention}, your PR was approved by {reviewer}.
-            [{prTitle} #{prNumber}]({prURL})
+          # schedule_prs_min_age: 24
+          # show_discord_link_preview: false
+          # notify_review_requested_on_closed: false
+          # notify_review_requested_on_draft: false
+          # template_opened: >-
+          # template_reopened_assigned: >-
+          # template_reopened_exist_one: >-
+          # template_reopened_exist_plural: >-
+          # template_ready_for_review_assigned: >-
+          # template_ready_for_review_exist_one: >-
+          # template_ready_for_review_exist_plural: >-
+          # template_review_requested_one: >-
+          # template_review_requested_plural: >-
+          # template_schedule: >-
+          # template_review_submitted_commented: >-
+          # template_review_submitted_changes_requested: >-
+          # template_review_submitted_approved: >-
