@@ -1,27 +1,128 @@
 name: Random Reviewer Discord
-description: randomly assigns reviewers to PRs and alert using Discord.
+description: Automatically assign reviewers at random and notify them on Discord
 author: JedBeom
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
   icon: user-check
   color: green
 
-# Define your inputs here.
 inputs:
-  candidates:
-    description: candidates of reviewers. see .env.example.
+  usernames:
+    description: Pairs of usernames(GitHub, Discord) of reviewers.
     required: true
   webhook_url:
-    description: Discord webhook url
+    description: Discord Webhook URL
     required: true
-  template:
-    description: template
+  schedule_prs_min_age:
+    description: (hours) PRs which are not old by the specified amount of time are ignored when review reminding.
     required: false
-  allow_other_events:
-    description: allow this action to run on all events including pull_request
+    default: 24
+  show_discord_link_preview:
+    description: Show link previews in Discord messages.
     required: false
     default: false
+  notify_review_requested_on_closed:
+    description: Notify requested reviewers for closed PRs.
+    required: false
+    default: false
+  notify_review_requested_on_draft:
+    description: Notify requested reviewers for draft PRs.
+    required: false
+    default: false
+  template_opened:
+    description: Message template used when a PR is opened.
+    required: false
+    default: >-
+      🎉 {mention} was selected as a reviewer for
+      [{prTitle} #{prNumber}]({prURL})
+  template_reopened_assigned:
+    description: >-
+      Message template used when a PR is reopened
+      and a new reviewer is assigned.
+    required: false
+    default: >-
+      🎉 {mention} was selected as a reviewer for 
+      [{prTitle} #{prNumber} (reopened)]({prURL})
+  template_reopened_exist_one:
+    description: >-
+      Message template used when a PR is reopened
+      and a reviewer already exists.
+    required: false
+    default: >-
+      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
+      was reopened and waiting your review.
+  template_reopened_exist_plural:
+    description: >-
+      Message template used when a PR is reopened
+      and reviewers already exist.
+    required: false
+    default: >-
+      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
+      was reopened and waiting your review.
+  template_ready_for_review_assigned:
+    description: >-
+      Message template used when a PR is ready for review
+      and a new reviewer is assigned.
+    required: false
+    default: >-
+      🎉 {mention} was selected as a reviewer for
+      [{prTitle} #{prNumber} (ready for review)]({prURL})
+  template_ready_for_review_exist_one:
+    description: >-
+      Message template used when a PR is ready for review
+      and a reviewer already exists.
+    required: false
+    default: >-
+      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
+      is now ready for review and waiting your review.
+  template_ready_for_review_exist_plural:
+    description: >-
+      Message template used when a PR is ready for review
+      and reviewers already exist.
+    required: false
+    default: >-
+      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
+      is now ready for review and waiting your review.
+  template_review_requested_one:
+    description: >-
+      Message template used when a reviewer was requested.
+    required: false
+    default: >-
+      🔄 {mention} was requested a review by {sender} for
+      [{prTitle} #{prNumber}]({prURL}).
+  template_review_requested_plural:
+    description: >-
+      Message template used when reviewers were requested.
+    required: false
+    default: >-
+      🔄 {mention}, you were requested a review by {sender} for
+      [{prTitle} #{prNumber}]({prURL}).
+  template_schedule:
+    description: The opening of a review reminder message
+    required: false
+    default: >-
+      🔔 Good afternoon! These PRs are waiting for your reviews!
+  template_review_submitted_commented:
+    description: >-
+      Message template used when a reviewer left comments on the PR.
+    required: false
+    default: >-
+      ✉️ {mention}, your PR has got a feedback from {reviewer}!
+      [{prTitle} #{prNumber}]({prURL})
+  template_review_submitted_changes_requested:
+    description: >-
+      Message template used when a reviewer requested changes on the PR.
+    required: false
+    default: >-
+      ✉️ {mention}, {reviewer} requested changes on
+      [{prTitle} #{prNumber}]({prURL}).
+  template_review_submitted_approved:
+    description: >-
+      Message template used when a reviewer approved changes.
+    required: false
+    default: >-
+      ✉️ {mention}, your PR was approved by {reviewer}.
+      [{prTitle} #{prNumber}]({prURL})
 
 runs:
   using: node20

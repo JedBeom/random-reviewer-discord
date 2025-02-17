@@ -6,8 +6,9 @@ import {
   afterEach,
   jest,
 } from "@jest/globals";
-import { type Username } from "./types.js";
-import { parseUsernames, selectReviewer } from "./github.js";
+import type { Username } from "@/types";
+import { parseUsernames, chooseReviewer, groupReviewers } from "@/github";
+import type { PullRequest } from "@octokit/webhooks-types";
 
 // example usernames
 const user1: Username = { github: "jedbeom", discord: "1111111111111111111" };
@@ -86,12 +87,77 @@ afterEach(() => {
   jest.spyOn(global.Math, "random").mockRestore();
 });
 
-describe("selectReviewer", () => {
+describe("chooseReviewer", () => {
   for (const set of selectReviewerSets) {
     test(`id: ${set.id}`, () => {
-      expect(selectReviewer(set.usernames, set.exclude)).toStrictEqual(
+      expect(chooseReviewer(set.usernames, set.exclude)).toStrictEqual(
         set.expected,
       );
     });
   }
+
+  test("Zero candidates throws an error", () => {
+    expect(() => chooseReviewer([user1], [user1.github])).toThrow(
+      new Error("No candidates after excluding the author."),
+    );
+  });
+});
+
+describe("groupReviewers", () => {
+  const now = new Date();
+  const pulls = <PullRequest[]>[
+    {
+      draft: false,
+      created_at: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+      requested_reviewers: [
+        { login: "reviewer1" },
+        { login: "reviewer2" },
+        { slug: "ignore_me!" },
+      ],
+      base: {
+        repo: { owner: { login: "owner" }, name: "repo" },
+      },
+      number: 1,
+    },
+    {
+      draft: false,
+      created_at: new Date(now.getTime() - 10 * 60 * 60 * 1000).toISOString(), // 10 hours ago
+      requested_reviewers: [{ login: "reviewer1" }],
+      base: { repo: { owner: { login: "owner" }, name: "repo" } },
+      number: 2,
+    },
+    {
+      draft: true,
+      created_at: new Date(now.getTime() - 15 * 60 * 60 * 1000).toISOString(), // 15 hours ago
+      requested_reviewers: [{ login: "reviewer3" }],
+      base: { repo: { owner: { login: "owner" }, name: "repo" } },
+      number: 3,
+    },
+  ];
+
+  test("should group reviewers correctly based on minAge", () => {
+    const minAge = 6; // 6 hours
+    const result = groupReviewers(pulls, minAge);
+
+    expect(result).toEqual({
+      reviewer1: [pulls[1]],
+    });
+  });
+
+  test("should exclude draft pull requests", () => {
+    const minAge = 1; // 1 hour
+    const result = groupReviewers(pulls, minAge);
+
+    expect(result).toEqual({
+      reviewer1: [pulls[0], pulls[1]],
+      reviewer2: [pulls[0]],
+    });
+  });
+
+  test("should exclude pull requests younger than minAge", () => {
+    const minAge = 12; // 12 hours
+    const result = groupReviewers(pulls, minAge);
+
+    expect(result).toEqual({});
+  });
 });

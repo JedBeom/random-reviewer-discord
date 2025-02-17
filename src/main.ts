@@ -1,53 +1,68 @@
 import * as core from "@actions/core";
-import { context as githubContext } from "@actions/github";
 
+import { initContext } from "@/github";
+import { ActivityTypeRouter, Router } from "@/router";
+import type {
+  RouterContext,
+  PullRequestActivityType,
+  PullRequestReviewActivityType,
+} from "@/types";
 import {
-  assignReviewer,
-  event,
-  hasReviewer,
-  isReadyToReview,
-  parseUsernames,
-  selectReviewer,
-} from "@/github";
-import { sendMessage } from "@/discord";
+  fallbackHandler,
+  handleOpened,
+  handleReopenOrReadyForReview,
+  handleReviewRequested,
+  handleReviewSubmitted,
+  handleSchedule,
+} from "@/handlers";
 
 export async function main() {
-  const allowOtherEvents = core.getBooleanInput("allow_other_events");
-  const eventName = githubContext.eventName;
-  if (eventName !== "pull_request" && !allowOtherEvents) {
-    return core.setFailed(
-      `This event is ${eventName}. To allow this action to run on all events, set allow_other_events as true.`,
-    );
+  const prRouter = new ActivityTypeRouter<
+    RouterContext,
+    PullRequestActivityType
+  >();
+  {
+    prRouter.add("opened", handleOpened);
+    prRouter.add("reopened", handleReopenOrReadyForReview);
+    prRouter.add("ready_for_review", handleReopenOrReadyForReview);
+    prRouter.add("review_requested", handleReviewRequested);
+    prRouter.fallback(fallbackHandler);
   }
 
-  if (event.action === "synchronize") {
-    return core.info("This action doesn't work for synchronize");
+  const reviewRouter = new ActivityTypeRouter<
+    RouterContext,
+    PullRequestReviewActivityType
+  >();
+  {
+    reviewRouter.add("submitted", handleReviewSubmitted);
+    reviewRouter.fallback(fallbackHandler);
   }
 
-  if (!isReadyToReview() && hasReviewer()) {
-    core.info("This pr is draft or already has reviewer(s).");
-    core.info("no-op. Stopping.");
-    return;
+  const router = new Router<RouterContext>();
+  {
+    router.add("pull_request", prRouter.toHandler());
+    router.add("pull_request_review", reviewRouter.toHandler());
+    router.add("schedule", handleSchedule);
+    router.fallback(fallbackHandler);
+    router.use((next) => {
+      return async (c: RouterContext) => {
+        core.info(
+          `event.activityType: ${c.event.name}.${c.event.activityType}`,
+        );
+        return next(c);
+      };
+    });
   }
 
+  core.info("Execute router.route()");
   try {
-    const candidatesInput = core.getMultilineInput("candidates");
-    const webhookURL = core.getInput("webhook_url");
-    const template = core.getInput("template");
-    const creator = event.sender.login.toLowerCase();
-
-    const usernames = parseUsernames(candidatesInput);
-    if (usernames.length === 0) {
-      core.warning("No candidates. No-op.");
-      return;
-    }
-
-    const reviewer = selectReviewer(usernames, [creator]);
-    await assignReviewer(reviewer);
-    await sendMessage(webhookURL, template, reviewer);
+    const context = initContext();
+    await router.route(context);
   } catch (error) {
     if (error instanceof Error) {
-      core.setFailed(error.message);
+      return core.setFailed(error.message);
     }
+
+    core.setFailed("Failed with an unknown exception.");
   }
 }
