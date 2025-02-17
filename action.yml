@@ -32,97 +32,127 @@ inputs:
   template_opened:
     description: Message template used when a PR is opened.
     required: false
-    default: >-
-      🎉 {mention} was selected as a reviewer for
-      [{prTitle} #{prNumber}]({prURL})
+    default: |-
+      🎲 {mention} has been selected to review a pull request!
+
+      - PR: [{prTitle} (#{prNumber})]({prURL})
   template_reopened_assigned:
     description: >-
       Message template used when a PR is reopened
       and a new reviewer is assigned.
     required: false
-    default: >-
-      🎉 {mention} was selected as a reviewer for 
-      [{prTitle} #{prNumber} (reopened)]({prURL})
+    default: |-
+      🎲 {mention} has been selected to review a pull request!
+
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: closed → reopened
   template_reopened_exist_one:
     description: >-
       Message template used when a PR is reopened
       and a reviewer already exists.
     required: false
-    default: >-
-      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-      was reopened and waiting your review.
+    default: |-
+      🔔 {mention}, the pull request has been reopened and needs your review.
+
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: closed → reopened
   template_reopened_exist_plural:
     description: >-
       Message template used when a PR is reopened
       and reviewers already exist.
     required: false
-    default: >-
-      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-      was reopened and waiting your review.
+    default: |-
+      🔔 The pull request has been reopened.
+
+      - Requested Reviewers: {mention}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: closed → reopened
   template_ready_for_review_assigned:
     description: >-
       Message template used when a PR is ready for review
       and a new reviewer is assigned.
     required: false
-    default: >-
-      🎉 {mention} was selected as a reviewer for
-      [{prTitle} #{prNumber} (ready for review)]({prURL})
+    default: |-
+      🎲 {mention} has been selected to review a pull request!
+
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: draft → ready for review
   template_ready_for_review_exist_one:
     description: >-
       Message template used when a PR is ready for review
       and a reviewer already exists.
     required: false
-    default: >-
-      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-      is now ready for review and waiting your review.
+    default: |-
+      🔔 {mention}, the pull request has been ready for review and needs your review.
+
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: draft → ready for review
   template_ready_for_review_exist_plural:
     description: >-
       Message template used when a PR is ready for review
       and reviewers already exist.
     required: false
-    default: >-
-      ℹ️ {mention}, [{prTitle} #{prNumber}]({prURL}) 
-      is now ready for review and waiting your review.
+    default: |-
+      🔔 The pull request has been ready for review.
+
+      - Requested Reviewers: {mention}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - PR Status: draft → ready for review
   template_review_requested_one:
     description: >-
       Message template used when a reviewer was requested.
     required: false
-    default: >-
-      🔄 {mention} was requested a review by {sender} for
-      [{prTitle} #{prNumber}]({prURL}).
+    default: |-
+      🔄 You've been requested to review a pull request.
+
+      - Sender: {sender}
+      - Reviewer: {mention}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
   template_review_requested_plural:
     description: >-
       Message template used when reviewers were requested.
     required: false
-    default: >-
-      🔄 {mention}, you were requested a review by {sender} for
-      [{prTitle} #{prNumber}]({prURL}).
+    default: |-
+      🔄 You've been requested to review a pull request.
+
+      - Sender: {sender}
+      - Reviewers: {mention}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
   template_schedule:
     description: The opening of a review reminder message
     required: false
     default: >-
-      🔔 Good afternoon! These PRs are waiting for your reviews!
+      ⏳ Friendly Reminder: These pull request are still waiting for your review!
   template_review_submitted_commented:
     description: >-
       Message template used when a reviewer left comments on the PR.
     required: false
-    default: >-
-      ✉️ {mention}, your PR has got a feedback from {reviewer}!
-      [{prTitle} #{prNumber}]({prURL})
+    default: |-
+      💬 {mention}, your pull request has received feedback.
+
+      - Reviewer: {reviewer}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - Status: Commented
   template_review_submitted_changes_requested:
     description: >-
       Message template used when a reviewer requested changes on the PR.
     required: false
-    default: >-
-      ✉️ {mention}, {reviewer} requested changes on
-      [{prTitle} #{prNumber}]({prURL}).
+    default: |-
+      ⚠️ {mention}, changes requested on your pull request
+
+      - Reviewer: {reviewer}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - Status: Changes Requested
   template_review_submitted_approved:
     description: >-
       Message template used when a reviewer approved changes.
     required: false
-    default: >-
-      ✉️ {mention}, your PR was approved by {reviewer}.
-      [{prTitle} #{prNumber}]({prURL})
+    default: |-
+      ✅ {mention}, your pull request has been approved!
+
+      - Reviewer: {reviewer}
+      - PR: [{prTitle} (#{prNumber})]({prURL})
+      - Status: Approved
 
 runs:
   using: node20
