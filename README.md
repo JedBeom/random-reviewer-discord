@@ -127,6 +127,7 @@ This action supports the following events:
 - [`pull_request_review`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_review) ([Webhook](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review))
   - `submitted`: Notify the author when the review was submitted.
 - [`schedule`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule): Remind reviewers who were requested reviews but haven't done yet.
+- [`workflow_dispatch`](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#workflow_dispatch): Do the same tasks as `schedule`. Share options(inputs) with `schedule`.
 
 Other event types would be ignored with an error.
 
