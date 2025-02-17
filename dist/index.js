@@ -62311,7 +62311,7 @@ async function listAndRemind(c, repoOwner, repoName) {
             idToMention(reviewer.discord) +
             "\n" +
             grouped[reviewer.github]
-                .map((pr) => `    - [${pr.title} #${pr.number}](${pr.html_url})`)
+                .map((pr) => `  - [${pr.title} #${pr.number}](${pr.html_url})`)
                 .join("\n"));
     }
     const msg = getTemplate("schedule");
