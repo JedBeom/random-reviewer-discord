@@ -1,7 +1,7 @@
 {
   "name": "random-reviewer-discord",
   "description": "Automatically assign reviewers at random and notify them on Discord",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "",
   "type": "module",
   "private": true,

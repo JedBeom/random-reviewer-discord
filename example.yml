@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run random-reviewer-discord
-        uses: JedBeom/random-reviewer-discord@v0.2.0
+        uses: JedBeom/random-reviewer-discord@v0.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
