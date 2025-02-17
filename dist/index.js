@@ -62174,9 +62174,11 @@ async function handleReopenOrReadyForReview(c) {
     }
     const requestedReviewers = await getRequestedReviewers(c.octokit, pr);
     if (requestedReviewers.length === 1) {
+        coreExports.info("Found one requested reviewer.");
         return notifyOne(requestedReviewers[0], false);
     }
     if (requestedReviewers.length > 1) {
+        coreExports.info(`Found ${requestedReviewers.length} requested reviewers.`);
         const usernames = c.usernames.filter(({ github }) => requestedReviewers.includes(github));
         await notifyWithTemplate({
             client: c.webhookClient,
@@ -62185,8 +62187,10 @@ async function handleReopenOrReadyForReview(c) {
             pr,
             showLinkPreview: c.option.showDiscordLinkPreview,
         });
+        coreExports.info("Notifed them on Discord.");
         return;
     }
+    coreExports.info("No requested reviewers.");
     const candidatesSets = [
         ["previous reviewers", await getPreviousReviewers(c.octokit, pr)],
         ["assignees", pr.assignees.map((user) => user.login.toLowerCase())],
@@ -62199,6 +62203,7 @@ async function handleReopenOrReadyForReview(c) {
             continue;
         }
         if (candidatesWithoutAuthor.length === 1) {
+            coreExports.info(`Found one from ${setType}`);
             return notifyOne(candidatesWithoutAuthor[0], true);
         }
         const usernames = c.usernames.filter(({ github }) => candidatesWithoutAuthor.includes(github));
