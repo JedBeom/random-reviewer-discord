@@ -343,6 +343,12 @@ export async function handleReviewSubmitted(c: RouterContext) {
     return;
   }
 
+  const reviewer = event.review.user.login;
+  if (reviewer.toLowerCase() === author.github) {
+    core.info("This is a self comment. No notifications for it.");
+    return;
+  }
+
   const tmpl = getTemplate(
     ("review_submitted_" + event.review.state) as TemplateKey,
   );
@@ -352,7 +358,7 @@ export async function handleReviewSubmitted(c: RouterContext) {
     username: author,
     pr: event.pull_request as PullRequest,
     showLinkPreview: c.option.showDiscordLinkPreview,
-    dataReviewer: event.review.user.login,
+    dataReviewer: reviewer,
   });
 }
 

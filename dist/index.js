@@ -63178,6 +63178,11 @@ async function handleReviewSubmitted(c) {
         coreExports.info("The review was dismissed and not considered as an event.");
         return;
     }
+    const reviewer = event.review.user.login;
+    if (reviewer.toLowerCase() === author.github) {
+        coreExports.info("This is a self comment. No notifications for it.");
+        return;
+    }
     const tmpl = getTemplate(("review_submitted_" + event.review.state));
     await notifyWithTemplate({
         client: c.webhookClient,
@@ -63185,7 +63190,7 @@ async function handleReviewSubmitted(c) {
         username: author,
         pr: event.pull_request,
         showLinkPreview: c.option.showDiscordLinkPreview,
-        dataReviewer: event.review.user.login,
+        dataReviewer: reviewer,
     });
 }
 async function assignAndNotify(c, template) {
